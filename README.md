@@ -12,6 +12,8 @@ design.md 是设计文档，是简单的 Markdown 格式。
 
 中文译文以 gitbook 格式组织。
 
+glossary.md 为词汇表。
+
 ### 分工
 
 译者自己认领后，填入下面的表格。
