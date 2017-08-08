@@ -25,3 +25,4 @@ glossary.md 为词汇表。
 | 文件名     | 翻译       | 审稿     |
 |------------|------------|----------|
 | design.md  | tiansiyuan |          |
+|add-column.md|tangxiaoji||
