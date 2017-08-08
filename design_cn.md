@@ -2,7 +2,7 @@
 
 本文档是 Spencer Kimball 在2014年早期写的最初的设计文档的一个更新版。
 
-# Overview
+# 概述
 
 CockroachDB 是一个分布式 SQL 数据库，其首要设计目标是**可扩展性**，**强一致性**和**生存性**。CockroachDB 的目标是，以最小的延迟扰乱且不需手动干预，而能够容忍磁盘、计算机，机架，甚至**数据中心**的失效。CockroachDB 节点是对称的；一个设计目标是以最小的配置且不需要额外的依赖**同质部署** （一个二进制文件）。
 
@@ -60,198 +60,88 @@ CockroachDB 键是任意的字节串。键分两种：系统键和表数据键�
 
 系统键分为几个子类：
 
-- **全局** keys store cluster-wide data such as the "meta1" and
-    "meta2" keys as well as various other system-wide keys such as the
-    node and store ID allocators.
-- **存储本地** keys are used for unreplicated store metadata
-    (e.g. the `StoreIdent` structure). "Unreplicated" indicates that
-    these values are not replicated across multiple stores because the
-    data they hold is tied to the lifetime of the store they are
-    present on.
-- **域本地** keys store range metadata that is associated with a
-    global key. Range local keys have a special prefix followed by a
-    global key and a special suffix. For example, transaction records
-    are range local keys which look like:
+- **全局**键保存集群范围的数据，如 "meta1" 和 "meta2" 键，以及其他的系统范围的键，如节点和存储的 ID 分配器。
+- **存储本地**键用于非复制的存储元数据（即，`StoreIdent` 结构）。"非复制的"意味着这些值没有被跨多个存储复制，因为它们存的数据与其存在的存储的生命周期绑定。
+- **域本地**键保存域与全局键关联的元数据。域本地键有一个特别的前缀，后面是全局键和一个特别后缀。例如，事务记录是域本地键，看起来是这样的：
     `\x01k<global-key>txn-<txnID>`.
-- **复制的域 ID 本地** keys store range metadata that is
-    present on all of the replicas for a range. These keys are updated
-    via Raft operations. Examples include the range lease state and
-    abort cache entries.
-- **非复制的域 ID 本地** keys store range metadata that is
-    local to a replica. The primary examples of such keys are the Raft
-    state and Raft log.
+- **复制的域 ID 本地**键保存一个域的所有副本中都有的域元数据。这些键通过 Raft 操作更新。例子包括域租约状态和退出缓存条目。
+- **非复制的域 ID 本地**键保存副本本地的域元数据。这样的键的主要的例子是 Raft 状态和 Raft 日志。
 
-Table data keys are used to store all SQL data. Table data keys
-contain internal structure as described in the section on [mapping
-data between the SQL model and
-KV](#data-mapping-between-the-sql-model-and-kv).
+表数据键用于保存所有的 SQL 数据。表数据键包含在[在 SQL 模型和 KV 间映射数据](#data-mapping-between-the-sql-model-and-kv)一节中描述的内部结构。
 
-# Versioned Values
+# 带版本的值
 
-Cockroach maintains historical versions of values by storing them with
-associated commit timestamps. Reads and scans can specify a snapshot
-time to return the most recent writes prior to the snapshot timestamp.
-Older versions of values are garbage collected by the system during
-compaction according to a user-specified expiration interval. In order
-to support long-running scans (e.g. for MapReduce), all versions have a
-minimum expiration.
+CockroachDB 通过保存相关的提交时间戳，维护值的历史版本。读和扫描可以指定一个快照时间，以返回快照时间戳之前的最近的写。就的数据版本在压紧期间按照用户定义的到期间隔被系统垃圾回收。为了支持长时间运行的扫描（即用于 MapReduce），所有版本有一个最小的到期间隔。
 
-Versioned values are supported via modifications to RocksDB to record
-commit timestamps and GC expirations per key.
+对带版本的值的支持是通过修改 RocksDB 以记录提交时间戳和每天的 GC 到期间隔完成的。
 
-# Lock-Free Distributed Transactions
+# 无锁的分布式事务
 
-Cockroach provides distributed transactions without locks. Cockroach
-transactions support two isolation levels:
+CockroachDB 提供不带锁的分布式事务。CockroachDB 事务支持两个级别的隔离：
 
-- snapshot isolation (SI) and
-- *serializable* snapshot isolation (SSI).
+- 快照隔离（SI）和
+- *可序列化*快照隔离（SSI）。
 
-*SI* is simple to implement, highly performant, and correct for all but a
-handful of anomalous conditions (e.g. write skew). *SSI* requires just a touch
-more complexity, is still highly performant (less so with contention), and has
-no anomalous conditions. Cockroach’s SSI implementation is based on ideas from
-the literature and some possibly novel insights.
+*SI* 实现简单，高效，对于除了不多的几个异常情况（即，写偏）都是正确的。*SSI* 要求一点更多的复杂性，仍旧高效（对于竞争差一点），而且没有异常情况。CockroachDB 的 SSI 实现基于来自文献和一些可能新颖的想法。
 
-SSI is the default level, with SI provided for application developers
-who are certain enough of their need for performance and the absence of
-write skew conditions to consciously elect to use it. In a lightly
-contended system, our implementation of SSI is just as performant as SI,
-requiring no locking or additional writes. With contention, our
-implementation of SSI still requires no locking, but will end up
-aborting more transactions. Cockroach’s SI and SSI implementations
-prevent starvation scenarios even for arbitrarily long transactions.
+SSI 是缺省的级别，而 SI 提供给应用开发者们，他们需要足够肯定他们对于效率和不存在写偏的情况而有意识地选择使用它。在一个轻微竞争的系统中，我们的 SSI 实现就像 SI 一样高效，不需要所或者条件写。在竞争的情况下，我们的 SII 实现仍旧不需要所，但是会导致退出更多的事务。CockroachDB 的 SI 和 SSI 实现避免了饥饿的场景，甚至对于任意长的事务也是如此。
 
-See the [Cahill paper](https://drive.google.com/file/d/0B9GCVTp_FHJIcEVyZVdDWEpYYXVVbFVDWElrYUV0NHFhU2Fv/edit?usp=sharing)
-for one possible implementation of SSI. This is another [great paper](http://cs.yale.edu/homes/thomson/publications/calvin-sigmod12.pdf).
-For a discussion of SSI implemented by preventing read-write conflicts
-(in contrast to detecting them, called write-snapshot isolation), see
-the [Yabandeh paper](https://drive.google.com/file/d/0B9GCVTp_FHJIMjJ2U2t6aGpHLTFUVHFnMTRUbnBwc2pLa1RN/edit?usp=sharing),
-which is the source of much inspiration for Cockroach’s SSI.
+一个可能的 SSI 实现，见 [Cahill 的论文](https://drive.google.com/file/d/0B9GCVTp_FHJIcEVyZVdDWEpYYXVVbFVDWElrYUV0NHFhU2Fv/edit?usp=sharing)。这是另一篇[伟大的论文](http://cs.yale.edu/homes/thomson/publications/calvin-sigmod12.pdf)。
+关于通过避免读-写冲突（相对于检测它们，称之为写-快照隔离）实现 SSI 的讨论，见
+[Yabandeh 的论文](https://drive.google.com/file/d/0B9GCVTp_FHJIMjJ2U2t6aGpHLTFUVHFnMTRUbnBwc2pLa1RN/edit?usp=sharing)，这是 CockroachDB 的SSI 的更多灵感来源。
 
-Both SI and SSI require that the outcome of reads must be preserved, i.e.
-a write of a key at a lower timestamp than a previous read must not succeed. To
-this end, each range maintains a bounded *in-memory* cache from key range to
-the latest timestamp at which it was read.
+SI 和 SSI 都要求读的结果必须被保存，即，一个在比前一个读低的时间戳的键的写必须不能成功。因此，每个域维护一个有界的*内存内*缓存，从键域到被读的最后的时间戳。
 
-Most updates to this *timestamp cache* correspond to keys being read, though
-the timestamp cache also protects the outcome of some writes (notably range
-deletions) which consequently must also populate the cache. The cache’s entries
-are evicted oldest timestamp first, updating the low water mark of the cache
-appropriately.
+大多数对于这个*时间戳缓存*的更新对应被读的键，尽管时间戳缓存也保护一些写的结果（注意是域删除），它们随后也必须填充缓存。缓存的条目首先赶出最旧的时间戳，相应更新缓存的低水位。
 
-Each Cockroach transaction is assigned a random priority and a
-"candidate timestamp" at start. The candidate timestamp is the
-provisional timestamp at which the transaction will commit, and is
-chosen as the current clock time of the node coordinating the
-transaction. This means that a transaction without conflicts will
-usually commit with a timestamp that, in absolute time, precedes the
-actual work done by that transaction.
+每个 CockroachDB 事务在开始时被分配一个随机的优先级和一个”候选时间戳“。候选时间戳是临时的时间，在那个点事务会提交，并被选为协调事务的节点的当前时钟时间。这意味着，没有冲突的事务将通常带一个以绝对时间表示的，在事务的实际工作完成之前的时间戳提交。
 
-In the course of coordinating a transaction between one or more
-distributed nodes, the candidate timestamp may be increased, but will
-never be decreased. The core difference between the two isolation levels
-SI and SSI is that the former allows the transaction's candidate
-timestamp to increase and the latter does not.
+在一个或多个分布式节点间协调一个事务的过程中，候选时间戳可能会增长，但从不会减小。在两个隔离级别 SI 和 SSI 之间的核心差别是，前者允许事务的候选时间戳增长，而后者不会。
 
-**Hybrid Logical Clock**
+**混合逻辑时钟**
 
-Each cockroach node maintains a hybrid logical clock (HLC) as discussed
-in the [Hybrid Logical Clock paper](http://www.cse.buffalo.edu/tech-reports/2014-04.pdf).
-HLC time uses timestamps which are composed of a physical component (thought of
-as and always close to local wall time) and a logical component (used to
-distinguish between events with the same physical component). It allows us to
-track causality for related events similar to vector clocks, but with less
-overhead. In practice, it works much like other logical clocks: When events
+每个 cockroachDB 节点维护一个混合逻辑时钟（HLC），讨论见[混合逻辑时钟论文](http://www.cse.buffalo.edu/tech-reports/2014-04.pdf)。
+HLC 时间使用由一个物理元素（被认为并且总是 接近本地的系统时间）和一个逻辑元素（用于区分带有同样物理元素的事件）构成的时间戳。它允许我们追踪类似于向量时间的相关事件的因果关系，但开销更小。在实践中，它的工作方式非常像其他的逻辑时钟：当事件被一个节点接收，以及当事件被发送由本地附加的 HLC 生成的时间戳，它通知本地 HLC 由发送者提供给事件的时间戳。
+
 are received by a node, it informs the local HLC about the timestamp supplied
 with the event by the sender, and when events are sent a timestamp generated by
 the local HLC is attached.
 
-For a more in depth description of HLC please read the paper. Our
-implementation is [here](https://github.com/cockroachdb/cockroach/blob/master/pkg/util/hlc/hlc.go).
+关于 HLC 的更深入的描述，请阅读论文。我们的实现在
+[这里](https://github.com/cockroachdb/cockroach/blob/master/pkg/util/hlc/hlc.go)。
 
-Cockroach picks a Timestamp for a transaction using HLC time. Throughout this
-document, *timestamp* always refers to the HLC time which is a singleton
-on each node. The HLC is updated by every read/write event on the node, and
-the HLC time >= wall time. A read/write timestamp received in a cockroach request
-from another node is not only used to version the operation, but also updates
-the HLC on the node. This is useful in guaranteeing that all data read/written
-on a node is at a timestamp < next HLC time.
+CockroachDB 使用 HLC 时间，为一个事务选了一个时间戳。在本文档中，*时间戳*总是指 HLC 时间，它在每个节点上是个单例。
+HLC 被每个节点上的每个读/写事件更新，并且 HLC 时间 >= 系统时间。在来自另一个节点的 CockroachDB 请求中收到的读/写时间戳不仅用于对操作生成版本，而且也更新节点上的 HLC。这在保证一个节点上的所有数据读/写是在一个小于下一个 HLC 时间的时间戳方面是有用的。
 
-**Transaction execution flow**
+**事务执行流**
 
-Transactions are executed in two phases:
+事务按两个阶段执行：
 
-1. Start the transaction by selecting a range which is likely to be
-   heavily involved in the transaction and writing a new transaction
-   record to a reserved area of that range with state "PENDING". In
-   parallel write an "intent" value for each datum being written as part
-   of the transaction. These are normal MVCC values, with the addition of
-   a special flag (i.e. “intent”) indicating that the value may be
-   committed after the transaction itself commits. In addition,
-   the transaction id (unique and chosen at txn start time by client)
-   is stored with intent values. The txn id is used to refer to the
-   transaction record when there are conflicts and to make
-   tie-breaking decisions on ordering between identical timestamps.
-   Each node returns the timestamp used for the write (which is the
-   original candidate timestamp in the absence of read/write conflicts);
-   the client selects the maximum from amongst all write timestamps as the
-   final commit timestamp.
+1. 通过选择一个可能深度涉及事务的域并写一个状态为"PENDING"的新的事务记录到一个域的保留区，从而启动该事务。与此同时，作为事务的一部分，对被写的每个数据写入一个"意向"值。这些事正常的 MVCC 值，增加了一个特殊标记（即，"intent"），表示这个值可能在事务本身提交之后被提交。另外，事务 id （唯一，而且在 txn 启动时被客户端选择）和意向值保存在一起。txn id 用于在冲突发生时指向事务记录，并用于在同样的时间戳之间的排序做出决胜局决策。每个节点返回用于写的时间戳（在没有读/写冲突的情况下，是当初的候选时间戳）；客户端从所有写时间戳中选择最大的作为最终的提交时间戳。
 
-2. Commit the transaction by updating its transaction record. The value
-   of the commit entry contains the candidate timestamp (increased as
-   necessary to accommodate any latest read timestamps). Note that the
-   transaction is considered fully committed at this point and control
-   may be returned to the client.
+2. 通过更新事务记录提交事务。提交条目的值包含候选时间戳（如果需要则增长，以容纳最近的读时间戳）。注意，事务在这一点上被认为是完全提交的，而且控制被返回给客户端。
 
-   In the case of an SI transaction, a commit timestamp which was
-   increased to accommodate concurrent readers is perfectly
-   acceptable and the commit may continue. For SSI transactions,
-   however, a gap between candidate and commit timestamps
-   necessitates transaction restart (note: restart is different than
-   abort--see below).
+   在 SI 事务的情况下，一个被增大以容纳同时发生的写的时间戳是完全可以接受的，而且提交可以继续。然而，对于 SSI 事务，在候选和提交时间戳之间的间隔有必要重启事务。（注意：重启不同于退出 -- 键下文）。
 
-   After the transaction is committed, all written intents are upgraded
-   in parallel by removing the “intent” flag. The transaction is
-   considered fully committed before this step and does not wait for
-   it to return control to the transaction coordinator.
+   事务被提交后，所有的写意向通过移除"intent"标记被并行升级。在这一步之前，事务被认为是完全提交的，并且不等待返回控制给事务协调器。
 
-In the absence of conflicts, this is the end. Nothing else is necessary
-to ensure the correctness of the system.
+如果没有冲突，这就是结束了。不需要任何事情来保证系统的正确性。
 
-**Conflict Resolution**
+**冲突解决**
 
-Things get more interesting when a reader or writer encounters an intent
-record or newly-committed value in a location that it needs to read or
-write. This is a conflict, usually causing either of the transactions to
-abort or restart depending on the type of conflict.
+当一个读者或者写者在一个位置遇到一个它需要读或者写的意向记录或者新提交的值时，事情变得更有趣了。这是一个冲突，通常造成事务退出或者重启，取决于冲突的类型。
 
-***Transaction restart:***
+***事务重启:***
 
-This is the usual (and more efficient) type of behaviour and is used
-except when the transaction was aborted (for instance by another
-transaction).
-In effect, that reduces to two cases; the first being the one outlined
+这是通常（也是更高效）的行为类型，而且被用于除了事务被（例如，被另一个事务）退出的情况。
+
+实际上，这被缩减为两种情况；第一种是上面列出的：SSI 事务找到试图提交，而提交时间戳被推。第二种情况涉及一个事务频繁遇到冲突，即，它的一个读者或者写者需要需要解决冲突的数据（见下面的事务交互）。
 above: An SSI transaction that finds upon attempting to commit that
-its commit timestamp has been pushed. The second case involves a transaction
-actively encountering a conflict, that is, one of its readers or writers
-encounter data that necessitate conflict resolution
-(see transaction interactions below).
+its commit timestamp has been pushed. 
 
-When a transaction restarts, it changes its priority and/or moves its
-timestamp forward depending on data tied to the conflict, and
-begins anew reusing the same txn id. The prior run of the transaction might
-have written some write intents, which need to be deleted before the
-transaction commits, so as to not be included as part of the transaction.
-These stale write intent deletions are done during the reexecution of the
-transaction, either implicitly, through writing new intents to
-the same keys as part of the reexecution of the transaction, or explicitly,
-by cleaning up stale intents that are not part of the reexecution of the
-transaction. Since most transactions will end up writing to the same keys,
-the explicit cleanup run just before committing the transaction is usually
-a NOOP.
+当一个事务重启，它改变了优先级和/或将其时间戳向前移动，这取决于绑定到冲突的数据，并开始重新使用同一个 txn id。事务的前一次运行可能写了一些写意向，这些需要在事务提交之前删除，从而不必包含为事务的一部分。这些陈旧的写意向删除在事务的再次执行期间完成，或者是隐式地写作为重新执行事务的一部分的新的意向到同样的键，或者是显式地通过清除不是重新执行事务的一部分的陈旧意向。由于大部分事务最终写到同样的键，显式清除恰好在提交事务之前运行通常是一个空操作。
 
-***Transaction abort:***
+***事务退出:***
 
 This is the case in which a transaction, upon reading its transaction
 record, finds that it has been aborted. In this case, the transaction
@@ -261,7 +151,7 @@ intents as they encounter them) but will make an effort to clean up
 after itself. The next attempt (if applicable) then runs as a new
 transaction with **a new txn id**.
 
-***Transaction interactions:***
+***事务交互:***
 
 There are several scenarios in which transactions interact:
 
