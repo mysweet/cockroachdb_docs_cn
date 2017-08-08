@@ -26,3 +26,4 @@ glossary.md 为词汇表。
 |------------|------------|----------|
 | design.md  | tiansiyuan |          |
 |add-column.md|tangxiaoji||
+|add-constraint.md|Wbofeng|          |
