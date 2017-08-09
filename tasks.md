@@ -16,6 +16,6 @@
 | build-an-app-with-cockroachdb.md |||
 | build-a-go-app-with-cockroachdb.md |||
 | build-a-python-app-with-cockroachdb.md |||
-| build-a-nodejs-app-with-cockroachdb.md |||
+| build-a-nodejs-app-with-cockroachdb.md |zhaoyuxin||
 | build-a-java-app-with-cockroachdb.md |||
 
