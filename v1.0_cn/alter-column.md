@@ -30,7 +30,7 @@
 
 下面的示例中，在将数据插入到 `subscriptions` 表时，无需定义 `newsletter` 列的值，即可插入布尔值 `true` 。
 ```sql
-ALTER TABLE subscriptions ALTER COLUMN newsletter SET DEFAULT true;
+> ALTER TABLE subscriptions ALTER COLUMN newsletter SET DEFAULT true;
 ```
 ### 移除默认约束
 
@@ -45,7 +45,7 @@ ALTER TABLE subscriptions ALTER COLUMN newsletter SET DEFAULT true;
 如果某列应用了[非空约束](not-null.html)，可以移除该约束，这意味着该列变为可选的，并且可以写入空值。
 
 ``` sql
-ALTER TABLE subscriptions ALTER COLUMN newsletter DROP NOT NULL;
+> ALTER TABLE subscriptions ALTER COLUMN newsletter DROP NOT NULL;
 ```
 
 ## 参考
