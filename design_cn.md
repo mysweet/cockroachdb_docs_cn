@@ -143,200 +143,115 @@ its commit timestamp has been pushed.
 
 ***事务退出:***
 
-This is the case in which a transaction, upon reading its transaction
-record, finds that it has been aborted. In this case, the transaction
-can not reuse its intents; it returns control to the client before
-cleaning them up (other readers and writers would clean up dangling
-intents as they encounter them) but will make an effort to clean up
-after itself. The next attempt (if applicable) then runs as a new
-transaction with **a new txn id**.
+在这种情况下，一个事务在读了它的事务记录后，发现它被退出了。此时，事务不能重用它的意向；它在清理意向（其他的读者和写者在遇到无主的意向时会清理）之前将控制返回给客户端，但会随后努力清理它们。下一个尝试（如果可用）用一个**新的 txn id**运行一个新的事务。
 
 ***事务交互:***
 
-There are several scenarios in which transactions interact:
+事务交互的几种情形：
 
-- **Reader encounters write intent or value with newer timestamp far
-  enough in the future**: This is not a conflict. The reader is free
-  to proceed; after all, it will be reading an older version of the
-  value and so does not conflict. Recall that the write intent may
-  be committed with a later timestamp than its candidate; it will
-  never commit with an earlier one. **Side note**: if a SI transaction
-  reader finds an intent with a newer timestamp which the reader’s own
-  transaction has written, the reader always returns that intent's value.
+- **读者遇到带有远在将来的时间戳的写意向或值**：
+  这不是冲突。读者可以自由继续；毕竟，它将读到一个旧的值因而不冲突。记得写意向可能以一个比它的候选晚的时间戳提交；它从不会一个早的时间戳提交。**边注**：如果一个 SI 事务读者发现一个该读者自己的事务写的带有较新的时间戳的意向，该读者总是返回那个意向的值。
 
-- **Reader encounters write intent or value with newer timestamp in the
-  near future:** In this case, we have to be careful. The newer
-  intent may, in absolute terms, have happened in our read's past if
-  the clock of the writer is ahead of the node serving the values.
-  In that case, we would need to take this value into account, but
-  we just don't know. Hence the transaction restarts, using instead
-  a future timestamp (but remembering a maximum timestamp used to
-  limit the uncertainty window to the maximum clock skew). In fact,
-  this is optimized further; see the details under "choosing a time
-  stamp" below.
+- **读者遇到带有不远的将来的较新的时间戳的写意向或值**：
+  在这种情况下，我们得小心处理。较新的意向，绝对发生在我们的读的过去，如果写者的时钟在提供值的节点之前。在这种情况下，我们需要将这个值考虑在内，但是我们恰恰不知道。因此，事务重启，使用一个将来的时间戳（但记住用于限制最大时钟偏移的不确定性窗口的最大时间戳）。实际上，这个被进一步优化了；见下面"选择一个时间戳"条目下的细节。
 
-- **Reader encounters write intent with older timestamp**: the reader
-  must follow the intent’s transaction id to the transaction record.
-  If the transaction has already been committed, then the reader can
-  just read the value. If the write transaction has not yet been
-  committed, then the reader has two options. If the write conflict
-  is from an SI transaction, the reader can *push that transaction's
-  commit timestamp into the future* (and consequently not have to
-  read it). This is simple to do: the reader just updates the
-  transaction’s commit timestamp to indicate that when/if the
-  transaction does commit, it should use a timestamp *at least* as
-  high. However, if the write conflict is from an SSI transaction,
-  the reader must compare priorities. If the reader has the higher priority,
-  it pushes the transaction’s commit timestamp (that
-  transaction will then notice its timestamp has been pushed, and
-  restart). If it has the lower or same priority, it retries itself using as
-  a new priority `max(new random priority, conflicting txn’s
-  priority - 1)`.
+- **读者遇到带有旧的时间戳的写意向**：
+  读者必须按照意向的事务 id 找到事务的记录。如果事务已经被提交，读者可以只读取值。如果写事务还没有被提交，读者有两个选择。如果写冲突来自一个 SI 事务，读者可以*将事务的提交时间戳推到将来*（并因此不必读它）。容易去做：读者仅更新事务的提交时间戳以表明当/如果事务确实提交，它应该使用一个*至少*同样高的时间戳。而然，如果写冲突来自一个 SSI 事务，读者必须比较优先级。如果读者有更高的优先级，它将推后事务的提交时间戳（事务将注意到它的时间戳被推后了，并重启）。如果有较低或同样的优先级，它使用一个新的优先级 `max
+(新的优先级，冲突的 txn 的优先级 - 1)` 重试自己。
 
-- **Writer encounters uncommitted write intent**:
-  If the other write intent has been written by a transaction with a lower
-  priority, the writer aborts the conflicting transaction. If the write
-  intent has a higher or equal priority the transaction retries, using as a new
-  priority *max(new random priority, conflicting txn’s priority - 1)*;
-  the retry occurs after a short, randomized backoff interval.
+- **读者遇到未提交的写意向**：
+  如果其他写意向被一个带有较低优先级的事务写入，写者退出冲突的事务。如果写意向有较高或同样的优先级，事务以一个新的优先级*max(新的随机优先级，冲突 txn 的优先级 - 1)*重试；重试发生在一个短的、随机的退避间隔。
 
-- **Writer encounters newer committed value**:
-  The committed value could also be an unresolved write intent made by a
-  transaction that has already committed. The transaction restarts. On restart,
-  the same priority is reused, but the candidate timestamp is moved forward
-  to the encountered value's timestamp.
+- **写者遇到较新的已提交的值**：
+  已提交的值可能也有一个由已提交的事务造成的未解决的写意向。事务重启。重启时，使用同样的优先级，但是候选时间戳被移动为遇到的值的时间戳。
 
-- **Writer encounters more recently read key**:
-  The *read timestamp cache* is consulted on each write at a node. If the write’s
-  candidate timestamp is earlier than the low water mark on the cache itself
-  (i.e. its last evicted timestamp) or if the key being written has a read
-  timestamp later than the write’s candidate timestamp, this later timestamp
-  value is returned with the write. A new timestamp forces a transaction
-  restart only if it is serializable.
+- **写者遇到更近的被读的键**：
+  *读时间戳缓存* 咨询节点上的每个写。如果写的候选时间戳早于缓存自己的低水位（即，它的最后被驱逐的时间戳），或者，被写的键有一个晚于写的候选时间戳的读时间戳，这个晚些的时间戳值被写返回。只有当它是可序列化时，一个新的时间戳迫使一个事务重启。
 
-**Transaction management**
+**事务管理**
 
-Transactions are managed by the client proxy (or gateway in SQL Azure
-parlance). Unlike in Spanner, writes are not buffered but are sent
-directly to all implicated ranges. This allows the transaction to abort
-quickly if it encounters a write conflict. The client proxy keeps track
-of all written keys in order to resolve write intents asynchronously upon
-transaction completion. If a transaction commits successfully, all intents
-are upgraded to committed. In the event a transaction is aborted, all written
-intents are deleted. The client proxy doesn’t guarantee it will resolve intents.
+事务由客户端代理（SQL Azure 的叫法是网关）管理。不同于Spanner，写不被缓存，而是直接发给所有的隐含的域。
+这允许事务遇到写冲突时快速退出。客户端代理追踪所有的被写键以在事务完成时异步解决所有的写意向。如果一个
+事务成功提交，所有意向被升级为已提交。在事务被退出的情况下，所有被写的意向被删除。客户端代理不保证它会
+解决意向。
 
-In the event the client proxy restarts before the pending transaction is
-committed, the dangling transaction would continue to "live" until
-aborted by another transaction. Transactions periodically heartbeat
-their transaction record to maintain liveness.
-Transactions encountered by readers or writers with dangling intents
-which haven’t been heartbeat within the required interval are aborted.
-In the event the proxy restarts after a transaction commits but before
-the asynchronous resolution is complete, the dangling intents are upgraded
-when encountered by future readers and writers and the system does
-not depend on their timely resolution for correctness.
+在客户端在等待的事务被提交之前重启，无主的事务将继续"存在"，知道被另一个事务退出。事务定期心跳其事务记录，
+以维持活跃度。
 
-An exploration of retries with contention and abort times with abandoned
-transaction is
-[here](https://docs.google.com/document/d/1kBCu4sdGAnvLqpT-_2vaTbomNmX3_saayWEGYu1j7mQ/edit?usp=sharing).
+被带有在要求的间隔未被心跳的无主意向的读者和写者遇到的事务被退出。在事务提交之后当在异步解决完成之前代理
+重启的情况下，当被未来的读者和写者遇到，而且系统不依赖于及时解决保证正确性，无主的意向被升级。
 
-**Transaction Records**
+[这里](https://docs.google.com/document/d/1kBCu4sdGAnvLqpT-_2vaTbomNmX3_saayWEGYu1j7mQ/edit?usp=sharing)
+是一个对带竞争的重试和对放弃的事务的退出次数的探索。
 
-Please see [pkg/roachpb/data.proto](https://github.com/cockroachdb/cockroach/blob/master/pkg/roachpb/data.proto) for the up-to-date structures, the best entry point being `message Transaction`.
+**事务记录**
 
-**Pros**
+最新的结构，请见 [pkg/roachpb/data.proto](https://github.com/cockroachdb/cockroach/blob/master/pkg/roachpb/data.proto)，
+最佳的入口是`消息事务`。
 
-- No requirement for reliable code execution to prevent stalled 2PC
-  protocol.
-- Readers never block with SI semantics; with SSI semantics, they may
-  abort.
-- Lower latency than traditional 2PC commit protocol (w/o contention)
-  because second phase requires only a single write to the
-  transaction record instead of a synchronous round to all
-  transaction participants.
-- Priorities avoid starvation for arbitrarily long transactions and
-  always pick a winner from between contending transactions (no
-  mutual aborts).
-- Writes not buffered at client; writes fail fast.
-- No read-locking overhead required for *serializable* SI (in contrast
-  to other SSI implementations).
-- Well-chosen (i.e. less random) priorities can flexibly give
-  probabilistic guarantees on latency for arbitrary transactions
-  (for example: make OLTP transactions 10x less likely to abort than
-  low priority transactions, such as asynchronously scheduled jobs).
+**优势**
 
-**Cons**
+- 不需要可靠的节点执行以避免停滞的两阶段提交（2PC）协议。
+- 用 SI 语义，读者从不会阻塞；用 SSI 语义，它们可能会退出。
+- 比传统的两阶段提交协议延迟低（没有竞争），因为第二阶段只需要对事务记录的当个写，
+  而不是一个对所有事务参与者的同步回合。
+- 优先级避免了对任意长的事务的饥饿，并总是在竞争的事务（没有相互退出）中选取一个
+  胜利者。
+- 写在客户端不被缓存；写快速失败。
+- 对可序列化的 SI （相对于其他的 SSI 实现）不需要读锁定开销。
+- 良好选择的（即，较少随机）优先级能够灵活地给予任意事务在延迟上的概率保证（例如，
+  相比于低优先级的事务，如异步调度的任务，使得 OLTP 事务退出的可能性是十分之一。
 
-- Reads from non-lease holder replicas still require a ping to the lease holder
+**劣势**
+
+- 从非租约持有者复本的读仍然要求提醒租约持有者更新*读时间戳缓存*。
+  Reads from non-lease holder replicas still require a ping to the lease holder
   to update the *read timestamp cache*.
-- Abandoned transactions may block contending writers for up to the
-  heartbeat interval, though average wait is likely to be
-  considerably shorter (see [graph in link](https://docs.google.com/document/d/1kBCu4sdGAnvLqpT-_2vaTbomNmX3_saayWEGYu1j7mQ/edit?usp=sharing)).
-  This is likely considerably more performant than detecting and
-  restarting 2PC in order to release read and write locks.
-- Behavior different than other SI implementations: no first writer
-  wins, and shorter transactions do not always finish quickly.
+- 被放弃的事务可能阻塞竞争的写者最大到心跳间隔，尽管平均等待可能被认为更短（见
+  [链接里的图](https://docs.google.com/document/d/1kBCu4sdGAnvLqpT-_2vaTbomNmX3_saayWEGYu1j7mQ/edit?usp=sharing)）。
+  相比于检测并重启 2PC 以释放读和写锁，这可能是相当地更长。
+- 不同于其他 SI 实现的行为：没有第一个写者赢，而且短的事务并不总是快速结束。
+  对 OLTP 系统的惊异元素可能是一个问题因素。
   Element of surprise for OLTP systems may be a problematic factor.
-- Aborts can decrease throughput in a contended system compared with
-  two phase locking. Aborts and retries increase read and write
-  traffic, increase latency and decrease throughput.
+- 与两阶段锁定相比，退出会降低一个竞争系统的吞吐量。退出和重试增加了读和写的流量，
+  提高了延迟并降低了吞吐量。
 
-**Choosing a Timestamp**
+**选择一个时间戳**
 
-A key challenge of reading data in a distributed system with clock skew
-is choosing a timestamp guaranteed to be greater than the latest
-timestamp of any committed transaction (in absolute time). No system can
-claim consistency and fail to read already-committed data.
+从带有时钟偏移的分布式系统读取数据的一个关键挑战是选择一个时间戳，确保大于最后任何
+被提交事务的时间戳（按绝对时间）。没有系统能够声称一致性并无法读取已经提交的数据。
 
-Accomplishing consistency for transactions (or just single operations)
-accessing a single node is easy. The timestamp is assigned by the node
-itself, so it is guaranteed to be at a greater timestamp than all the
-existing timestamped data on the node.
+达到访问一个节点的事务（或仅仅单个操作）的一致性是容易的。时间戳有节点本身分配，因此，
+确保了是一个比该节点上所有现存时间戳数据都大的时间戳。
 
-For multiple nodes, the timestamp of the node coordinating the
-transaction `t` is used. In addition, a maximum timestamp `t+ε` is
-supplied to provide an upper bound on timestamps for already-committed
-data (`ε` is the maximum clock skew). As the transaction progresses, any
-data read which have timestamps greater than `t` but less than `t+ε`
-cause the transaction to abort and retry with the conflicting timestamp
-t<sub>c</sub>, where t<sub>c</sub> \> t. The maximum timestamp `t+ε` remains
-the same. This implies that transaction restarts due to clock uncertainty
-can only happen on a time interval of length `ε`.
+对于多个节点，使用协调事务的节点的时间戳 `t`。另外，提供一个最大的时间戳 `t+ε `
+作为已经提交的数据的时间戳上限 （`ε`是最大的时钟偏移）。随着事务的进展 ，任何时间戳大于
+`t` 但小于 `t+ε` 的数据读造成事务退出并以冲突的时间戳 t<sub>c</sub>，其中 t<sub>c</sub> \> t。
+最大时间戳 `t+ε` 不变。这意味着，事务由于时钟的不确定性重启只能发生在一个长度为 `ε`的时间间隔。
 
-We apply another optimization to reduce the restarts caused
-by uncertainty. Upon restarting, the transaction not only takes
-into account t<sub>c</sub>, but the timestamp of the node at the time
-of the uncertain read t<sub>node</sub>. The larger of those two timestamps
-t<sub>c</sub> and t<sub>node</sub> (likely equal to the latter) is used
-to increase the read timestamp. Additionally, the conflicting node is
-marked as “certain”. Then, for future reads to that node within the
-transaction, we set `MaxTimestamp = Read Timestamp`, preventing further
-uncertainty restarts.
+我们使用另外一个优化以减少由于不确定性造成的重启。在重启的时候，事务不仅考虑
+ t<sub>c</sub>，而且也要考虑在不确定读时的节点时间戳 t<sub>node</sub>。两个时间戳
+t<sub>c</sub> 和 t<sub>node</sub> 中较大的（可能等于后者）被用于增大读时间戳。
+另外，冲突的节点被标记为 “certain。随后，为了对事务中那个节点的未来的读，我们设置
+ `MaxTimestamp = 读时间戳`，避免进一步的不确定性重启。
 
-Correctness follows from the fact that we know that at the time of the read,
-there exists no version of any key on that node with a higher timestamp than
-t<sub>node</sub>. Upon a restart caused by the node, if the transaction
-encounters a key with a higher timestamp, it knows that in absolute time,
-the value was written after t<sub>node</sub> was obtained, i.e. after the
-uncertain read. Hence the transaction can move forward reading an older version
-of the data (at the transaction's timestamp). This limits the time uncertainty
-restarts attributed to a node to at most one. The tradeoff is that we might
-pick a timestamp larger than the optimal one (> highest conflicting timestamp),
-resulting in the possibility of a few more conflicts.
+正确性来自于以下事实，我们知道，在读的时候，节点上没有任何键的版本的时间戳大于
+t<sub>node</sub>。在由节点造成的重启时，如果事务遇到一个有更大时间戳的键，它知道，
+按绝对时间，值在 t<sub>node</sub> 得到之后，即在非确定读之后，被写入。因此，事务
+能够将读数据的一个较旧的版本向前移动（在事务的时间戳）。这样将对一个节点的时间非确定性
+重启限制为最多一个。权衡是，我们可能选取一个大于最理想的时间戳（大于最大的冲突时间戳），
+结果是新的冲突比较少。
 
-We expect retries will be rare, but this assumption may need to be
-revisited if retries become problematic. Note that this problem does not
-apply to historical reads. An alternate approach which does not require
-retries makes a round to all node participants in advance and
-chooses the highest reported node wall time as the timestamp. However,
-knowing which nodes will be accessed in advance is difficult and
-potentially limiting. Cockroach could also potentially use a global
-clock (Google did this with [Percolator](https://www.usenix.org/legacy/event/osdi10/tech/full_papers/Peng.pdf)),
-which would be feasible for smaller, geographically-proximate clusters.
+我们期望重试会比较少，但是如果重试成了问题，这个假设可能需要重新考虑。注意，这个
+问题不适用于历史读。一个代替的方法不要求重试，提前对所有的节点参与者做一轮，并
+选择被报告的最高节点系统时间作为时间戳。然而，知道那个节点将被提前访问是困难的，
+而且，可能是有限的。CockroachDB 也可能使用一个全局的时钟（谷歌使用
+ [Percolator](https://www.usenix.org/legacy/event/osdi10/tech/full_papers/Peng.pdf))，
+这对于较小的、地理位置上接近的集群是可行的。
 
-# Strict Serializability (Linearizability)
+# 严格序列化（线性化）
 
-Roughly speaking, the gap between <i>strict serializability</i> (which we use
+大致来说， the gap between <i>strict serializability</i> (which we use
 interchangeably with <i>linearizability</i>) and CockroachDB's default
 isolation level (<i>serializable</i>) is that with linearizable transactions,
 causality is preserved. That is, if one transaction (say, creating a posting
