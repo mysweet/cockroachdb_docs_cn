@@ -8,7 +8,7 @@
 | add-column.md|tangxiaoji||
 | add-constraint.md|Wbofeng|          |
 | alter-column.md|jiachenhui|         |
-| install-cockroachdb.md|    |        |
+| install-cockroachdb.md| tangxiaoji   |        |
 | start-a-local-cluster.md | |        |
 | start-a-local-cluster-in-docker.md| |||
 | learn-cockroachdb-sql.md | | |
