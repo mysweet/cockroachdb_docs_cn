@@ -9,7 +9,7 @@
 | add-constraint.md|Wbofeng|          |
 | alter-column.md|jiachenhui|         |
 | install-cockroachdb.md| tangxiaoji   |        |
-| start-a-local-cluster.md | |        |
+| start-a-local-cluster.md |tangxiaoji |        |
 | start-a-local-cluster-in-docker.md| |||
 | learn-cockroachdb-sql.md | | |
 | use-the-built-in-sql-client.md |||
