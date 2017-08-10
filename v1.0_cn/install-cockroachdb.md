@@ -101,7 +101,7 @@ $ cockroach version
 $ docker version
 ```
 
-3、从 [Docker 镜像库](https://hub.docker.com/r/cockroachdb/cockroach/)下载官方 CockroachDB 镜像
+3、从 [Docker 镜像库](https://hub.docker.com/r/cockroachdb/cockroach/)下载官方 CockroachDB 镜像
 
 ```sh
 $ docker pull cockroachdb/cockroach:v1.0.4
