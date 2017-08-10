@@ -48,7 +48,7 @@ $ cockroach version
 
 |          工具      |             描述                         |
 | ------------------- | ---------------------------------------- |
-|C++ 编译器|必须支持 C++ 标准，GCC 优先，如 6.0 版本不能运行，查看如下 [issues](https://gcc.gnu.org/bugzilla/show_bug.cgi?id=48891)，在 macOS 下 Xcode 可做支持|
+|C++ 编译器|必须支持 C++ 标准，GCC 优先，如 6.0 版本不能运行，查看如下 [issues](https://gcc.gnu.org/bugzilla/show_bug.cgi?id=48891)，在 macOS 下 Xcode 可做支持|
 |Go|1.8.1 版本 Go 语言环境|
 |Bash|版本为 4 以上，但已知的 3.x 版本的 Bash 也可以正常运行|
 |CMake|3.81+ 版本|
@@ -145,7 +145,7 @@ $ cockroach version
 
 |         工具       |          描述                            |
 | ------------------- | ---------------------------------------- |
-|C++ 编译器|必须支持 C++ 标准，GCC 优先，如 6.0 版本不能运行，查看如下 [issues](https://gcc.gnu.org/bugzilla/show_bug.cgi?id=48891)，在 macOS 下 Xcode 可做支持|
+|C++ 编译器|必须支持 C++ 标准，GCC 优先，如 6.0 版本不能运行，查看如下 [issues](https://gcc.gnu.org/bugzilla/show_bug.cgi?id=48891)，在 macOS 下 Xcode 可做支持|
 |Go|1.8.1 或更高的 1.8 系列版本 Go 语言环境|
 |Bash|版本为 4 以上，但已知的 3.x 版本的 Bash 也可以正常运行|
 |CMake| 3.81+ 版本|
@@ -199,9 +199,9 @@ $ cockroach version
 $ sudo docker version
 ```
 
-如果没有输出服务列表，请运行后台程序（Linux 中 Docker 必须使用 sudo 权限）
+如果没有输出服务列表，请运行后台程序（Linux 中 Docker 必须使用 sudo 权限）
 
-3、从 [Docker 镜像库](https://hub.docker.com/r/cockroachdb/cockroach/)下载官方 CockroachDB 镜像
+3、从 [Docker 镜像库](https://hub.docker.com/r/cockroachdb/cockroach/)下载官方 CockroachDB 镜像
 
 ```sh
 $ sudo docker pull cockroachdb/cockroach:v1.0.4
@@ -238,11 +238,11 @@ PS C:\cockroach-v1.0.4.windows-6.2-amd64> .\cockroach.exe version
 PS C:\Users\username> docker version
 ```
 
-如果没有输出服务列表，请运行 Docker 后台程序
+如果没有输出服务列表，请运行 Docker 后台程序
 
-3、[共享你的本地驱动](https://docs.docker.com/docker-for-windows/#/shared-drives)。当 Docker 容器被停止或被删除时可以挂载本地目录作为持久化数据的数据卷。
+3、[共享你的本地驱动](https://docs.docker.com/docker-for-windows/#/shared-drives)。当 Docker 容器被停止或被删除时可以挂载本地目录作为持久化数据的数据卷。
 
-4、从 [Docker 镜像库](https://hub.docker.com/r/cockroachdb/cockroach/)下载官方 CockroachDB 镜像
+4、从 [Docker 镜像库](https://hub.docker.com/r/cockroachdb/cockroach/)下载官方 CockroachDB 镜像
 
 ```sh
 PS C:\Users\username> docker pull cockroachdb/cockroach:v1.0.4
@@ -258,4 +258,4 @@ PS C:\Users\username> docker run --rm cockroachdb/cockroach:v1.0.4 version
 
 [快速开始](https://www.cockroachlabs.com/docs/stable/start-a-local-cluster.html)搭建一个单节点或多节点的本地集群并通过内建的 SQL 客户端进行访问。
 
-> **注意**<br>CockroachDB 集群中的每一个节点周期性地向 Cockroach 实验室匿名报告使用详情。使用详情的说明和怎样选择不参加报告使用详情请参看[诊断报告](https://www.cockroachlabs.com/docs/stable/diagnostics-reporting.html)。
+> **注意**<br>CockroachDB 集群中的每一个节点周期性地向 Cockroach 实验室匿名报告使用详情。使用详情的说明和怎样选择不参加报告使用详情请参看[诊断报告](https://www.cockroachlabs.com/docs/stable/diagnostics-reporting.html)。
