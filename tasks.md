@@ -10,7 +10,7 @@
 | alter-column.md|jiachenhui|         |
 | install-cockroachdb.md| tangxiaoji   |        |
 | start-a-local-cluster.md |tangxiaoji |        |
-| start-a-local-cluster-in-docker.md| |||
+| start-a-local-cluster-in-docker.md|jiachenhui |||
 | learn-cockroachdb-sql.md | | |
 | use-the-built-in-sql-client.md |||
 | build-an-app-with-cockroachdb.md |||
