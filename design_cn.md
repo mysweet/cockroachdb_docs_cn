@@ -8,7 +8,7 @@ CockroachDB 是一个分布式 SQL 数据库，其首要设计目标是**可扩�
 
 数据库客户端的入口点是 SQL 界面。一个CockroachDB 集群中的每个节点都可以作为一个客户端 SQL 网关。客户端 SQL 网关将客户端 SQL 语句转换为键-值（KV）操作并执行，如果需要，网关会发布到整个集群，并返回结果给客户端。CockroachDB 实现了一个**单一的、巨大的、排序的映射**，映射从键到值，其中键值都是字节串。
 
-键值映射在逻辑上由称为域（range）的键空间的小片段构成。每个域由存储在本地的 KV 存储引擎（我们使用[RocksDB](http://rocksdb.org)，[LevelDB](https://github.com/google/leveldb) 的一个变种）中的数据支持。域数据被复制到数量可配置的其它 CockroachDB 节点上。域被合并和分裂，以维持一个目标尺寸，缺省为`64M`。相对小的尺寸有利于修复和再平衡，以处理节点失效、新的容量，甚至读/写负载。然而，尺寸必须针对系统管理更多的域所带来的压力进行平衡。
+键值映射在逻辑上由称为域（域）的键空间的小片段构成。每个域由存储在本地的 KV 存储引擎（我们使用[RocksDB](http://rocksdb.org)，[LevelDB](https://github.com/google/leveldb) 的一个变种）中的数据支持。域数据被复制到数量可配置的其它 CockroachDB 节点上。域被合并和分裂，以维持一个目标尺寸，缺省为`64M`。相对小的尺寸有利于修复和再平衡，以处理节点失效、新的容量，甚至读/写负载。然而，尺寸必须针对系统管理更多的域所带来的压力进行平衡。
 
 CockroachDB 实现水平可扩展性的途径：
 - 添加更多的节点，通过每个节点上的存储数量来提供集群的容量（除以一个可配置的复制因子），理论上最高可达 4艾 (4E，4*2^16) 字节的逻辑数据；
@@ -41,7 +41,7 @@ CockroachDB 实现了一个分层的架构。抽象的最高级是 SQL 层（当
 
 每个存储潜在包含很多域，即最低层的键-值数据单元。域使用 Raft 一致协议复制。下图是上图中五个节点中四个节点的放大版。每个域以三种方式使用 Raft 复制。颜色编码表示出相关的域复制。
 
-![域](media/ranges.png)
+![域](media/域s.png)
 
 每个物理节点提供两个基于 RPC 的键值 API：一个给外部的客户端，一个给内部的客户端（暴露敏感的运行功能）。两项服务接受批量的请求，并返回批量的回应。节点在能力和提供的界面上是对称的；每个有同样的二进制文件并且能够担任任何角色。
 
@@ -160,7 +160,7 @@ its commit timestamp has been pushed.
 (新的优先级，冲突的 txn 的优先级 - 1)` 重试自己。
 
 - **读者遇到未提交的写意向**：
-  如果其他写意向被一个带有较低优先级的事务写入，写者退出冲突的事务。如果写意向有较高或同样的优先级，事务以一个新的优先级*max(新的随机优先级，冲突 txn 的优先级 - 1)*重试；重试发生在一个短的、随机的退避间隔。
+  如果其他写意向被一个带有较低优先级的事务写入，写者退出冲突的事务。如果写意向有较高或同样的优先级，事务以一个新的优先级 *max(新的随机优先级，冲突 txn 的优先级 - 1)* 重试；重试发生在一个短的、随机的退避间隔。
 
 - **写者遇到较新的已提交的值**：
   已提交的值可能也有一个由已提交的事务造成的未解决的写意向。事务重启。重启时，使用同样的优先级，但是候选时间戳被移动为遇到的值的时间戳。
@@ -251,156 +251,115 @@ t<sub>node</sub>。在由节点造成的重启时，如果事务遇到一个有�
 
 # 严格序列化（线性化）
 
-大致来说， the gap between <i>strict serializability</i> (which we use
-interchangeably with <i>linearizability</i>) and CockroachDB's default
-isolation level (<i>serializable</i>) is that with linearizable transactions,
-causality is preserved. That is, if one transaction (say, creating a posting
-for a user) waits for its predecessor (creating the user in the first place)
-to complete, one would hope that the logical timestamp assigned to the former
-is larger than that of the latter.
-In practice, in distributed databases this may not hold, the reason typically
-being that clocks across a distributed system are not perfectly synchronized
+大致来说，在 <i>strict serializability</i> （我们和 <i>linearizability</i> 互换使用) 
+和 CockroachDB 的缺省隔离级别 (<i>serializable</i>) 之间的差距是，对于可线性化的事务，
+因果关系被保留。即，如果一个事务（比如，为一个用户创建一个发帖）等待它前面的事务
+（首先创建用户）完成，用户会希望分配给前者的逻辑时间戳大于后者的。
+
+实际上，对于分布式数据库可能不是这样的，典型的原因是，在一个分布式系统中的时钟不是被
+完美同步的，而且，”后来的“事务触碰了部分非连接，而第一个事务在上面运行，结果是，
+带有非连接信息的时钟决定提交的时间戳。
 and the "later" transaction touches a part disjoint from that on which the
 first transaction ran, resulting in clocks with disjoint information to decide
 on the commit timestamps.
 
-In practice, in CockroachDB many transactional workloads are actually
-linearizable, though the precise conditions are too involved to outline them
-here.
+实际上，在 CockroachDB 中，很多事务性的负载实际上是线性化的，尽管确切的情况过于复杂，
+难以在这里列出。
 
-Causality is typically not required for many transactions, and so it is
-advantageous to pay for it only when it *is* needed. CockroachDB implements
-this via <i>causality tokens</i>: When committing a transaction, a causality
-token can be retrieved and passed to the next transaction, ensuring that these
-two transactions get assigned increasing logical timestamps.
+因果关系通常对于很多事务是不需要的，因此，只有在它*确实*需要的时间才用是有利的。
+CockroachDB 通过<i>因果令牌</i>实现了这个：当提交一个事务时，一个因果关系令牌被获取
+并传递给下一个事务，保证这两个事务被分配递增的逻辑时间戳。
 
-Additionally, as better synchronized clocks become a standard commodity offered
-by cloud providers, CockroachDB can provide global linearizability by doing
-much the same that [Google's
-Spanner](http://research.google.com/archive/spanner.html) does: wait out the
-maximum clock offset after committing, but before returning to the client.
+另外，随着更好同步的时钟成为云服务商提供的标准商品，CockroachDB 通过做与
+[谷歌的 Spanner](http://research.google.com/archive/spanner.html) 基本相同的：
+在提交后但在返回给客户端之前等待最大的时钟抵消完成，能够提供全局的线性化。
 
-See the blog post below for much more in-depth information.
+更深入的信息，见下面的博客帖子。
 
 https://www.cockroachlabs.com/blog/living-without-atomic-clocks/
 
-# Logical Map Content
+# 逻辑映射内容
 
-Logically, the map contains a series of reserved system key/value
-pairs preceding the actual user data (which is managed by the SQL
-subsystem).
+逻辑上，映射在实际用户数据之前（这些由 SQL 子系统管理）包含一系列保留的系统键/值对。
 
-- `\x02<key1>`: Range metadata for range ending `\x03<key1>`. This a "meta1" key.
+- `\x02<key1>`: 域结尾 `\x03<key1>` 的域元数据。 这是一个 "meta1" 键。
 - ...
-- `\x02<keyN>`: Range metadata for range ending `\x03<keyN>`. This a "meta1" key.
-- `\x03<key1>`: Range metadata for range ending `<key1>`. This a "meta2" key.
+- `\x02<keyN>`: 域结尾 `\x03<keyN>` 的域元数据。 这是一个 "meta1" 键。
+- `\x03<key1>`: 域结尾 `<key1>` 的域元数据。 这是一个 "meta2" 键。
 - ...
-- `\x03<keyN>`: Range metadata for range ending `<keyN>`. This a "meta2" key.
-- `\x04{desc,node,range,store}-idegen`: ID generation oracles for various component types.
-- `\x04status-node-<varint encoded Store ID>`: Store runtime metadata.
-- `\x04tsd<key>`: Time-series data key.
-- `<key>`: A user key. In practice, these keys are managed by the SQL
-  subsystem, which employs its own key anatomy.
+- `\x03<keyN>`: 域结尾 `<keyN>` 的域元数据。 这是一个 "meta2" 键。
+- `\x04{desc,node,域,store}-idegen`: 对于各种元素类型的 ID 生成神谕。
+- `\x04status-node-<varint encoded Store ID>`: 存储运行时元数据。
+- `\x04tsd<key>`: 时间序列数据键。
+- `<key>`: 一个用户键。实际上，这些键由 SQL 子系统管理，它使用自己的键剖析。
 
-# Stores and Storage
+# 存储和存储空间
 
-Nodes contain one or more stores. Each store should be placed on a unique disk.
-Internally, each store contains a single instance of RocksDB with a block cache
-shared amongst all of the stores in a node. And these stores in turn have
-a collection of range replicas. More than one replica for a range will never
-be placed on the same store or even the same node.
+节点包含一个或多个存储。每个存储应该放在一个唯一的磁盘上。
+在内部，每个存储包含一个单独的 RocksDB 实例，带有一个在节点上所有存储间共享的块缓存。
+这些存储顺次有域副本的一个集合。一个域的多余一个的副本从不会被放在同样的存储甚至同一个节点上。
 
-Early on, when a cluster is first initialized, the few default starting ranges
-will only have a single replica, but as soon as other nodes are available they
-will replicate to them until they've reached their desired replication factor,
-the default being 3.
+早期，当一个首先初始化时，不多的缺省初始域将只有一个单一的副本，但是，一旦其他的节点可用，
+它们将复制直到它们达到它们期望的复制因子，缺省为 3。
 
-Zone configs can be used to control a range's replication factor and add
-constraints as to where the range's replicas can be located. When there is a
-change in a range's zone config, the range will up or down replicate to the
-appropriate number of replicas and move its replicas to the appropriate stores
-based on zone config's constraints.
+区配置可以被用作控制一个域的复制因子并添加域的副本可以放在哪里是限制。当域的区配置发生变化时，
+域将根据区的配置限制，增加或减少副本的数目到合适的值，并移动副本到合适的存储。
 
-# Self Repair
+# 自修复
 
-If a store has not been heard from (gossiped their descriptors) in some time,
-the default setting being 5 minutes, the cluster will consider this store to be
-dead. When this happens, all ranges that have replicas on that store are
-determined to be unavailable and removed. These ranges will then upreplicate
-themselves to other available stores until their desired replication factor is
-again met. If 50% or more of the replicas are unavailable at the same time,
-there is no quorum and the whole range will be considered unavailable until at
-least greater than 50% of the replicas are again available.
+如果一个存储在一段时间内，缺省是 5 分钟，没有被听到（闲聊它们的描述符），集群将认为这个存储死了。 
+当这种情况发生时，所有在那个存储上有副本的域被定为不可用并移除。这些域将随后向上复制它们自己到其他
+可用的存储，直到达到它们期望的复制因子。如果 50% 或更多的副本同时不可用，没有法定人数而且整个域将
+被认为不可用直到最少多于 50% 的副本再次可用。
 
-# Rebalancing
+# 再平衡
 
-As more data are added to the system, some stores may grow faster than others.
-To combat this and to spread the overall load across the full cluster, replicas
-will be moved between stores maintaining the desired replication factor. The
-heuristics used to perform this rebalancing include:
+随着更多的数据被加入到系统中，一些存储的增长可能快于其他的存储。为了克服这一点并将总体负载发散到
+整个集群，副本将在存储间移动，以维护期望的复制因子。用于执行整个再平衡的启发式包括：
 
-- the number of replicas per store
-- the total size of the data used per store
-- free space available per store
+- 每个存储的副本数量
+- 每个存储使用的数据整体大小
+- 每个存储可用的自由空间
 
-In the future, some other factors that might be considered include:
+将来，可能被考虑的其他因素包括：
 
-- cpu/network load per store
-- ranges that are used together often in queries
-- number of active ranges per store
-- number of range leases held per store
+- 每个存储的 cpu/网络负载
+- 在查询中一起使用的域
+- 每个存储的活跃域的数量
+- 每个存储保有的域租约数量
 
-# Range Metadata
+# 域元数据
 
-The default approximate size of a range is 64M (2\^26 B). In order to
-support 1P (2\^50 B) of logical data, metadata is needed for roughly
-2\^(50 - 26) = 2\^24 ranges. A reasonable upper bound on range metadata
-size is roughly 256 bytes (3\*12 bytes for the triplicated node
-locations and 220 bytes for the range key itself). 2\^24 ranges \* 2\^8
-B would require roughly 4G (2\^32 B) to store--too much to duplicate
-between machines. Our conclusion is that range metadata must be
-distributed for large installations.
+域的缺省近似大小是 is 64M (2\^26 B)。为了支持 1P (2\^50 B) 逻辑数据，需要大约 
+2\^(50 - 26) = 2\^24 个域的元数据。域元数据大小的一个合理上限大约是 256 字节 
+(3\*12 字节用于三倍的节点位置，220 字节用于域键本身)。2\^24 个域 \* 2\^8 B 将
+需要大约 4G (2\^32 B) 用于存放 -- 在机器之间复制太大了。结论是，对于大的安装，域
+元数据必须被分散。
 
-To keep key lookups relatively fast in the presence of distributed metadata,
-we store all the top-level metadata in a single range (the first range). These
-top-level metadata keys are known as *meta1* keys, and are prefixed such that
-they sort to the beginning of the key space. Given the metadata size of 256
-bytes given above, a single 64M range would support 64M/256B = 2\^18 ranges,
-which gives a total storage of 64M \* 2\^18 = 16T. To support the 1P quoted
-above, we need two levels of indirection, where the first level addresses the
-second, and the second addresses user data. With two levels of indirection, we
-can address 2\^(18 + 18) = 2\^36 ranges; each range addresses 2\^26 B, and
-altogether we address 2\^(36+26) B = 2\^62 B = 4E of user data.
+为了让键检索在分散的元数据的情况下保持相对快速，我们将所有的顶级元数据存放在一个单一的
+域(第一个域)中。这些顶级元数据键被称为 *meta1* 键，并加上前缀，使得它们在键空间中排在
+开始的位置。由于上面给出的 256 字节的元数据大小，单一的 64M 域将支持 64M/256B = 2\^18 
+个域，这总共是 64M \* 2\^18 = 16T 的存储空间。为了支持上面提到的 1P，我们需要两级间接
+寻址，其中，第一级寻址第二级，第二级寻址用户数据。使用两级间接寻址，我们可以寻址 
+2\^(18 + 18) = 2\^36 个域；每个域寻址 2\^26 B，总共我们可以寻址 
+2\^(36+26) B = 2\^62 B = 4E 用户数据。
 
-For a given user-addressable `key1`, the associated *meta1* record is found
-at the successor key to `key1` in the *meta1* space. Since the *meta1* space
-is sparse, the successor key is defined as the next key which is present. The
-*meta1* record identifies the range containing the *meta2* record, which is
-found using the same process. The *meta2* record identifies the range
-containing `key1`, which is again found the same way (see examples below).
+对于一个给定的用户可寻址 `key1`，相关的 *meta1* 记录在 *meta1* 空间中的 `key1` 的后继键找到。因为，*meta1* 空间是稀疏的，后继键被定义为存在的下一个键。*meta1* 记录确定包含 *meta2* 
+记录的域，它使用同样的过程找到。*meta2* 记录确定包含 `key1` 的域，它又以同样的方式找到（见
+下面的例子中）。
 
-Concretely, metadata keys are prefixed by `\x02` (meta1) and `\x03`
-(meta2); the prefixes `\x02` and `\x03` provide for the desired
-sorting behaviour. Thus, `key1`'s *meta1* record will reside at the
-successor key to `\x02<key1>`.
+具体来说，元数据键被加上前缀 `\x02` (meta1) 和 `\x03` (meta2)；前缀 `\x02` 和 `\x03` 提供了期望的排序行为。因此， `key1`'s *meta1* 记录将位于 `\x02<key1>` 的后继键。
 
-Note: we append the end key of each range to meta{1,2} records because
-the RocksDB iterator only supports a Seek() interface which acts as a
-Ceil(). Using the start key of the range would cause Seek() to find the
-key *after* the meta indexing record we’re looking for, which would
-result in having to back the iterator up, an option which is both less
-efficient and not available in all cases.
+注：我们将每个域的结尾键附加给 meta{1,2} 记录，因为 RocksDB 迭代器只支持一个 Seek() 界面，
+它是作为一个 Ceil()。使用域的开始键将造成 Seek() 寻找在我们正在寻找的索引记录的元数据*之后*的
+键，这将导致不得不备份迭代器，这是一个既低效也不是在所有情况下可用的选择。
 
-The following example shows the directory structure for a map with
-three ranges worth of data. Ellipses indicate additional key/value
-pairs to fill an entire range of data. For clarity, the examples use
-`meta1` and `meta2` to refer to the prefixes `\x02` and `\x03`. Except
-for the fact that splitting ranges requires updates to the range
-metadata with knowledge of the metadata layout, the range metadata
-itself requires no special treatment or bootstrapping.
+下面的例子展示了有三个域数据的映射的目录结构。
+directory structure for a map with three ranges worth of data. 
 
-**Range 0** (located on servers `dcrama1:8000`, `dcrama2:8000`,
-  `dcrama3:8000`)
+省略号表示填充整个数据域的另外的键/值对。为了清晰，例子使用 `meta1` 和 `meta2` 指前缀 `\x02` 和 `\x03`。除了分裂域需要知道元数据布局的域元数据更新的事实外，域元数据本身不需要特别的处理或引导。
+
+**域 0** (位于服务器 `dcrama1:8000`, `dcrama2:8000`, `dcrama3:8000`)
 
 - `meta1\xff`: `dcrama1:8000`, `dcrama2:8000`, `dcrama3:8000`
 - `meta2<lastkey0>`: `dcrama1:8000`, `dcrama2:8000`, `dcrama3:8000`
@@ -409,97 +368,81 @@ itself requires no special treatment or bootstrapping.
 - ...
 - `<lastkey0>`: `<lastvalue0>`
 
-**Range 1** (located on servers `dcrama4:8000`, `dcrama5:8000`,
-`dcrama6:8000`)
+**域 1** (位于服务器 `dcrama4:8000`, `dcrama5:8000`, `dcrama6:8000`)
 
 - ...
 - `<lastkey1>`: `<lastvalue1>`
 
-**Range 2** (located on servers `dcrama7:8000`, `dcrama8:8000`,
-`dcrama9:8000`)
+**域 2** (位于服务器 `dcrama7:8000`, `dcrama8:8000`, `dcrama9:8000`)
 
 - ...
 - `<lastkey2>`: `<lastvalue2>`
 
-Consider a simpler example of a map containing less than a single
-range of data. In this case, all range metadata and all data are
-located in the same range:
+看一个简单些的例子，一个包含少于一个单个数据域的映射。在这个例子中，所有的域元数据和所有的数据
+位于同一个域中：
 
-**Range 0** (located on servers `dcrama1:8000`, `dcrama2:8000`,
-`dcrama3:8000`)*
+**域 0** (位于服务器  `dcrama1:8000`, `dcrama2:8000`, `dcrama3:8000`)*
 
 - `meta1\xff`: `dcrama1:8000`, `dcrama2:8000`, `dcrama3:8000`
 - `meta2\xff`: `dcrama1:8000`, `dcrama2:8000`, `dcrama3:8000`
 - `<key0>`: `<value0>`
 - `...`
 
-Finally, a map large enough to need both levels of indirection would
-look like (note that instead of showing range replicas, this
-example is simplified to just show range indexes):
+最后，一个足够大需要两级间接寻址的映射会是这样的 (注意这个例子简化了只显示域索引，而没有显示域副本)：
 
-**Range 0**
+**域 0**
 
-- `meta1<lastkeyN-1>`: Range 0
-- `meta1\xff`: Range 1
-- `meta2<lastkey1>`:  Range 1
-- `meta2<lastkey2>`:  Range 2
-- `meta2<lastkey3>`:  Range 3
+- `meta1<lastkeyN-1>`: 域 0
+- `meta1\xff`: 域 1
+- `meta2<lastkey1>`:  域 1
+- `meta2<lastkey2>`:  域 2
+- `meta2<lastkey3>`:  域 3
 - ...
-- `meta2<lastkeyN-1>`: Range 262143
+- `meta2<lastkeyN-1>`: 域 262143
 
-**Range 1**
+**域 1**
 
-- `meta2<lastkeyN>`: Range 262144
-- `meta2<lastkeyN+1>`: Range 262145
+- `meta2<lastkeyN>`: 域 262144
+- `meta2<lastkeyN+1>`: 域 262145
 - ...
-- `meta2\xff`: Range 500,000
+- `meta2\xff`: 域 500,000
 - ...
 - `<lastkey1>`: `<lastvalue1>`
 
-**Range 2**
+**域 2**
 
 - ...
 - `<lastkey2>`: `<lastvalue2>`
 
-**Range 3**
+**域 3**
 
 - ...
 - `<lastkey3>`: `<lastvalue3>`
 
-**Range 262144**
+**域 262144**
 
 - ...
 - `<lastkeyN>`: `<lastvalueN>`
 
-**Range 262145**
+**域 262145**
 
 - ...
 - `<lastkeyN+1>`: `<lastvalueN+1>`
 
-Note that the choice of range `262144` is just an approximation. The
-actual number of ranges addressable via a single metadata range is
-dependent on the size of the keys. If efforts are made to keep key sizes
-small, the total number of addressable ranges would increase and vice
-versa.
+注意，选择 域 `262144` 仅仅是一个近似值。通过一个单个元数据域可寻址的域的实际数量取决于键的大小。如果试图保持小的键尺寸，可寻址的域总数会增加，反之亦然。
 
-From the examples above it’s clear that key location lookups require at
-most three reads to get the value for `<key>`:
+从上面的例子中可以清楚看到，键位置检索需要最多三次读以得到 `<key>` 的值：
 
-1. lower bound of `meta1<key>`
-2. lower bound of `meta2<key>`,
-3. `<key>`.
+1. `meta1<key>` 的下限
+2. `meta2<key>` 的下限，
+3. `<key>`。
 
-For small maps, the entire lookup is satisfied in a single RPC to Range 0. Maps
-containing less than 16T of data would require two lookups. Clients cache both
-levels of range metadata, and we expect that data locality for individual
-clients will be high. Clients may end up with stale cache entries. If on a
-lookup, the range consulted does not match the client’s expectations, the
-client evicts the stale entries and possibly does a new lookup.
+对于小的映射，整个查询在一次对域 0 的 RPC 完成。包含少于 16T 数据的映射将需要两次查询。客户端缓存两级的域元数据，我们期望对于各个客户端的数据本地性将会是高的。客户端可能会留有陈旧的缓存内容。如果在一次查询中，被咨询的域没有满足客户端的期望，客户端驱逐了陈旧的缓存内容并可能进行一次新的查询。
 
-# Raft - Consistency of Range Replicas
+# Raft - 域副本的一致性
 
-Each range is configured to consist of three or more replicas, as specified by
-their ZoneConfig. The replicas in a range maintain their own instance of a
+Each 域 is configured to consist of three or more replicas, as specified by
+their ZoneConfig. The replicas in a 域 maintain their own instance of a
 distributed consensus algorithm. We use the [*Raft consensus algorithm*](https://raftconsensus.github.io)
 as it is simpler to reason about and includes a reference implementation
 covering important details.
@@ -518,25 +461,25 @@ followers will simply relay commands to the last known leader.
 
 Our Raft implementation was developed together with CoreOS, but adds an extra
 layer of optimization to account for the fact that a single Node may have
-millions of consensus groups (one for each Range). Areas of optimization
+millions of consensus groups (one for each 域). Areas of optimization
 are chiefly coalesced heartbeats (so that the number of nodes dictates the
-number of heartbeats as opposed to the much larger number of ranges) and
+number of heartbeats as opposed to the much larger number of 域s) and
 batch processing of requests.
-Future optimizations may include two-phase elections and quiescent ranges
-(i.e. stopping traffic completely for inactive ranges).
+Future optimizations may include two-phase elections and quiescent 域s
+(i.e. stopping traffic completely for inactive 域s).
 
-# Range Leases
+# 域租约
 
-As outlined in the Raft section, the replicas of a Range are organized as a
+As outlined in the Raft section, the replicas of a 域 are organized as a
 Raft group and execute commands from their shared commit log. Going through
 Raft is an expensive operation though, and there are tasks which should only be
 carried out by a single replica at a time (as opposed to all of them).
 In particular, it is desirable to serve authoritative reads from a single
 Replica (ideally from more than one, but that is far more difficult).
 
-For these reasons, Cockroach introduces the concept of **Range Leases**:
+For these reasons, Cockroach introduces the concept of **域租约**:
 This is a lease held for a slice of (database, i.e. hybrid logical) time.
-A replica establishes itself as owning the lease on a range by committing
+A replica establishes itself as owning the lease on a 域 by committing
 a special lease acquisition log entry through raft. The log entry contains
 the replica node's epoch from the node liveness table--a system
 table containing an epoch and an expiration time for each node. A node is
@@ -553,15 +496,15 @@ or another lease is granted in the interim and the requested lease is
 ignored. A lease can move from node A to node B only after node A's
 liveness record has expired and its epoch has been incremented.
 
-Note: range leases for ranges within the node liveness table keyspace and
-all ranges that precede it, including meta1 and meta2, are not managed using
+Note: 域 leases for 域s within the node liveness table keyspace and
+all 域s that precede it, including meta1 and meta2, are not managed using
 the above mechanism to prevent circular dependencies.
 
 A replica holding a lease at a specific epoch can use the lease as long as
 the node epoch hasn't changed and the expiration time hasn't passed.
 The replica holding the lease may satisfy reads locally, without incurring the
 overhead of going through Raft, and is in charge or involved in handling
-Range-specific maintenance tasks such as splitting, merging and rebalancing
+域-specific maintenance tasks such as splitting, merging and rebalancing
 
 All Reads and writes are generally addressed to the replica holding
 the lease; if none does, any replica may be addressed, causing it to try
@@ -588,33 +531,33 @@ the stasis period) or proactively transferred away from the lease holder, which
 can also avoid the stasis period by promising not to serve any further reads
 until the next lease goes into effect.
 
-## Colocation with Raft leadership
+## 与 Raft 领导地位共存
 
-The range lease is completely separate from Raft leadership, and so without
-further efforts, Raft leadership and the Range lease might not be held by the
+The 域租约 is completely separate from Raft leadership, and so without
+further efforts, Raft leadership and the 域 lease might not be held by the
 same Replica. Since it's expensive to not have these two roles colocated (the
 lease holder has to forward each proposal to the leader, adding costly RPC
 round-trips), each lease renewal or transfer also attempts to colocate them.
 In practice, that means that the mismatch is rare and self-corrects quickly.
 
-## Command Execution Flow
+## 命令执行流
 
 This subsection describes how a lease holder replica processes a
 read/write command in more details. Each command specifies (1) a key
-(or a range of keys) that the command accesses and (2) the ID of a
-range which the key(s) belongs to. When receiving a command, a node
-looks up a range by the specified Range ID and checks if the range is
+(or a 域 of keys) that the command accesses and (2) the ID of a
+域 which the key(s) belongs to. When receiving a command, a node
+looks up a 域 by the specified 域 ID and checks if the 域 is
 still responsible for the supplied keys. If any of the keys do not
-belong to the range, the node returns an error so that the client will
-retry and send a request to a correct range.
+belong to the 域, the node returns an error so that the client will
+retry and send a request to a correct 域.
 
-When all the keys belong to the range, the node attempts to
+When all the keys belong to the 域, the node attempts to
 process the command. If the command is an inconsistent read-only
 command, it is processed immediately. If the command is a consistent
 read or a write, the command is executed when both of the following
 conditions hold:
 
-- The range replica has a range lease.
+- The 域 replica has a 域 lease.
 - There are no other running commands whose keys overlap with
 the submitted command and cause read/write conflict.
 
@@ -628,61 +571,61 @@ When the above two conditions are met, the lease holder replica processes the
 command. Consistent reads are processed on the lease holder immediately.
 Write commands are committed into the Raft log so that every replica
 will execute the same commands. All commands produce deterministic
-results so that the range replicas keep consistent states among them.
+results so that the 域 replicas keep consistent states among them.
 
 When a write command completes, all the replica updates their response
 cache to ensure idempotency. When a read command completes, the lease holder
 replica updates its timestamp cache to keep track of the latest read
 for a given key.
 
-There is a chance that a range lease gets expired while a command is
+There is a chance that a 域 lease gets expired while a command is
 executed. Before executing a command, each replica checks if a replica
 proposing the command has a still lease. When the lease has been
 expired, the command will be rejected by the replica.
 
 
-# Splitting / Merging Ranges
+# 分裂/合并域
 
-Nodes split or merge ranges based on whether they exceed maximum or
-minimum thresholds for capacity or load. Ranges exceeding maximums for
-either capacity or load are split; ranges below minimums for *both*
+Nodes split or merge 域s based on whether they exceed maximum or
+minimum thresholds for capacity or load. 域s exceeding maximums for
+either capacity or load are split; 域s below minimums for *both*
 capacity and load are merged.
 
-Ranges maintain the same accounting statistics as accounting key
+域s maintain the same accounting statistics as accounting key
 prefixes. These boil down to a time series of data points with minute
 granularity. Everything from number of bytes to read/write queue sizes.
 Arbitrary distillations of the accounting stats can be determined as the
 basis for splitting / merging. Two sensible metrics for use with
-split/merge are range size in bytes and IOps. A good metric for
+split/merge are 域 size in bytes and IOps. A good metric for
 rebalancing a replica from one node to another would be total read/write
-queue wait times. These metrics are gossipped, with each range / node
+queue wait times. These metrics are gossipped, with each 域 / node
 passing along relevant metrics if they’re in the bottom or top of the
-range it’s aware of.
+域 it’s aware of.
 
-A range finding itself exceeding either capacity or load threshold
-splits. To this end, the range lease holder computes an appropriate split key
+A 域 finding itself exceeding either capacity or load threshold
+splits. To this end, the 域 lease holder computes an appropriate split key
 candidate and issues the split through Raft. In contrast to splitting,
-merging requires a range to be below the minimum threshold for both
-capacity *and* load. A range being merged chooses the smaller of the
-ranges immediately preceding and succeeding it.
+merging requires a 域 to be below the minimum threshold for both
+capacity *and* load. A 域 being merged chooses the smaller of the
+域s immediately preceding and succeeding it.
 
 Splitting, merging, rebalancing and recovering all follow the same basic
 algorithm for moving data between roach nodes. New target replicas are
-created and added to the replica set of source range. Then each new
+created and added to the replica set of source 域. Then each new
 replica is brought up to date by either replaying the log in full or
 copying a snapshot of the source replica data and then replaying the log
 from the timestamp of the snapshot to catch up fully. Once the new
-replicas are fully up to date, the range metadata is updated and old,
+replicas are fully up to date, the 域 metadata is updated and old,
 source replica(s) deleted if applicable.
 
 **Coordinator** (lease holder replica)
 
 ```
 if splitting
-  SplitRange(split_key): splits happen locally on range replicas and
+  Split域(split_key): splits happen locally on 域 replicas and
   only after being completed locally, are moved to new target replicas.
 else if merging
-  Choose new replicas on same servers as target range replicas;
+  Choose new replicas on same servers as target 域 replicas;
   add to replica set.
 else if rebalancing || recovering
   Choose new replica(s) on least loaded servers; add to replica set.
@@ -697,32 +640,32 @@ if all info can be read from replicated log
   copy replicated log
 else
   snapshot source replica
-  send successive ReadRange requests to source replica
+  send successive Read域 requests to source replica
   referencing snapshot
 
 if merging
-  combine ranges on all replicas
+  combine 域s on all replicas
 else if rebalancing || recovering
-  remove old range replica(s)
+  remove old 域 replica(s)
 ```
 
-Nodes split ranges when the total data in a range exceeds a
-configurable maximum threshold. Similarly, ranges are merged when the
+Nodes split 域s when the total data in a 域 exceeds a
+configurable maximum threshold. Similarly, 域s are merged when the
 total data falls below a configurable minimum threshold.
 
 **TBD: flesh this out**: Especially for merges (but also rebalancing) we have a
-range disappearing from the local node; that range needs to disappear
+域 disappearing from the local node; that 域 needs to disappear
 gracefully, with a smooth handoff of operation to the new owner of its data.
 
-Ranges are rebalanced if a node determines its load or capacity is one
+域s are rebalanced if a node determines its load or capacity is one
 of the worst in the cluster based on gossipped load stats. A node with
 spare capacity is chosen in the same datacenter and a special-case split
-is done which simply duplicates the data 1:1 and resets the range
+is done which simply duplicates the data 1:1 and resets the 域
 configuration metadata.
 
-# Node Allocation (via Gossip)
+# 节点分配（通过 Gossip）
 
-New nodes must be allocated when a range is split. Instead of requiring
+New nodes must be allocated when a 域 is split. Instead of requiring
 every node to know about the status of all or even a large number
 of peer nodes --or-- alternatively requiring a specialized curator or
 master with sufficiently global knowledge, we use a gossip protocol to
@@ -761,10 +704,10 @@ The gossip protocol itself contains two primary components:
 - **Gossip Selection**: what to communicate. Gossip is divided into
   topics. Load characteristics (capacity per disk, cpu load, and
   state [e.g. draining, ok, failure]) are used to drive node
-  allocation. Range statistics (range read/write load, missing
-  replicas, unavailable ranges) and network topology (inter-rack
+  allocation. 域 statistics (域 read/write load, missing
+  replicas, unavailable 域s) and network topology (inter-rack
   bandwidth/latency, inter-datacenter bandwidth/latency, subnet
-  outages) are used for determining when to split ranges, when to
+  outages) are used for determining when to split 域s, when to
   recover replicas vs. wait for network connectivity, and for
   debugging / sysops. In all cases, a set of minimums and a set of
   maximums is propagated; each node applies its own view of the
@@ -779,7 +722,7 @@ The gossip protocol itself contains two primary components:
   node has seen. Each round of gossip communicates only the delta
   containing new items.
 
-# Node and Cluster Metrics
+# 节点和集群度量
 
 Every component of the system is responsible for exporting interesting
 metrics about itself. These could be histograms, throughput counters, or
@@ -794,7 +737,7 @@ to efficiently gain visibility into a universe of information at the Cluster,
 Node or Store level. A [periodic background process](RFCS/time_series_culling.md)
 culls older timeseries data, downsampling and eventually discarding it.
 
-# Key-prefix Accounting and Zones
+# 键前缀会计和区
 
 Arbitrarily fine-grained accounting is specified via
 key prefixes. Key prefixes can overlap, as is necessary for capturing
@@ -810,8 +753,8 @@ key prefixes:
 
 Accounting is kept for the entire map by default.
 
-## Accounting
-to keep accounting for a range defined by a key prefix, an entry is created in
+## 会计
+to keep accounting for a 域 defined by a key prefix, an entry is created in
 the accounting system table. The format of accounting table keys is:
 
 `\0acct<key-prefix>`
@@ -819,7 +762,7 @@ the accounting system table. The format of accounting table keys is:
 In practice, we assume each node is capable of caching the
 entire accounting table as it is likely to be relatively small.
 
-Accounting is kept for key prefix ranges with eventual consistency for
+Accounting is kept for key prefix 域s with eventual consistency for
 efficiency. There are two types of values which comprise accounting:
 counts and occurrences, for lack of better terms. Counts describe
 system state, such as the total number of bytes, rows,
@@ -857,8 +800,8 @@ configurable. Below are examples of each type of accounting value.
 - Put total MB
 - Delete op count
 - Delete total MB
-- Delete range op count
-- Delete range total MB
+- Delete 域 op count
+- Delete 域 total MB
 - Scan op count
 - Scan op MB
 - Split count
@@ -884,31 +827,31 @@ Keys for perf/load metrics:
 containing a varint64 entry for each minute with activity during the
 specified hour.
 
-To efficiently keep accounting over large key ranges, the task of
+To efficiently keep accounting over large key 域s, the task of
 aggregation must be distributed. If activity occurs within the same
-range as the key prefix for accounting, the updates are made as part
-of the consensus write. If the ranges differ, then a message is sent
-to the parent range to increment the accounting. If upon receiving the
-message, the parent range also does not include the key prefix, it in
+域 as the key prefix for accounting, the updates are made as part
+of the consensus write. If the 域s differ, then a message is sent
+to the parent 域 to increment the accounting. If upon receiving the
+message, the parent 域 also does not include the key prefix, it in
 turn forwards it to its parent or left child in the balanced binary
-tree which is maintained to describe the range hierarchy. This limits
+tree which is maintained to describe the 域 hierarchy. This limits
 the number of messages before an update is visible at the root to `2*log N`,
-where `N` is the number of ranges in the key prefix.
+where `N` is the number of 域s in the key prefix.
 
-## Zones
+## 区
 zones are stored in the map with keys prefixed by
 `\0zone` followed by the key prefix to which the zone
 configuration applies. Zone values specify a protobuf containing
-the datacenters from which replicas for ranges which fall under
+the datacenters from which replicas for 域s which fall under
 the zone must be chosen.
 
 Please see [pkg/config/config.proto](https://github.com/cockroachdb/cockroach/blob/master/pkg/config/config.proto) for up-to-date data structures used, the best entry point being `message ZoneConfig`.
 
 If zones are modified in situ, each node verifies the
-existing zones for its ranges against the zone configuration. If
-it discovers differences, it reconfigures ranges in the same way
+existing zones for its 域s against the zone configuration. If
+it discovers differences, it reconfigures 域s in the same way
 that it rebalances away from busy nodes, via special-case 1:1
-split to a duplicate range comprising the new configuration.
+split to a duplicate 域 comprising the new configuration.
 
 # SQL
 
@@ -924,7 +867,7 @@ the client can send SQL to open/close transactions, issue statements
 or queries or configure session parameters, much like with any other
 SQL database.
 
-## Language support
+## 语言支持
 
 CockroachDB also attempts to emulate the flavor of SQL supported by
 PostgreSQL, although it also diverges in significant ways:
@@ -942,7 +885,7 @@ PostgreSQL, although it also diverges in significant ways:
   coherent typing already and 2) existing SQL code for other databases
   will need to be massaged for CockroachDB anyways.
 
-## SQL architecture
+## SQL 架构
 
 Client connections over the network are handled in each node by a
 pgwire server process (goroutine). This handles the stream of incoming
@@ -976,7 +919,7 @@ also as a generator.
 The top-level planner consumes the data produced by the top node of
 the query plan and returns it to the client via pgwire.
 
-## Data mapping between the SQL model and KV
+## SQL 模型和KV间的数据映射
 
 Every SQL table has a primary key in CockroachDB. (If a table is created
 without one, an implicit primary key is provided automatically.)
@@ -1025,7 +968,7 @@ Finally, for SQL indexes, the KV key is formed using the SQL value of the
 indexed columns, and the KV value is the KV key prefix of the rest of
 the indexed row.
 
-## Distributed SQL
+## 分布式 SQL
 
 Dist-SQL is a new execution framework being developed as of Q3 2016 with the
 goal of distributing the processing of SQL queries.
@@ -1035,7 +978,7 @@ for a detailed design of the subsystem; this section will serve as a summary.
 
 Distributing the processing is desirable for multiple reasons:
 - Remote-side filtering: when querying for a set of rows that match a filtering
-  expression, instead of querying all the keys in certain ranges and processing
+  expression, instead of querying all the keys in certain 域s and processing
   the filters after receiving the data on the gateway node over the network,
   we'd like the filtering expression to be processed by the lease holder or
   remote node, saving on network traffic and related processing.
@@ -1064,7 +1007,7 @@ To run SQL statements in a distributed fashion, we introduce a couple of concept
   specialized depending on the cluster topology. The components of the physical
   plan are scheduled and run on the cluster.
 
-## Logical planning
+## 逻辑规划
 
 The logical plan is made up of _aggregators_. Each _aggregator_ consumes an
 _input stream_ of rows (or multiple streams for joins) and produces an _output
@@ -1103,7 +1046,7 @@ functions can be used to propagate ordering information across the logical plan.
 When there is a mismatch (an aggregator has an ordering requirement that is not
 matched by a guarantee), we insert a **sorting aggregator**.
 
-### Types of aggregators
+### 聚合子类型
 
 - `TABLE READER` is a special aggregator, with no input stream. It's configured
   with spans of a table or index and the schema that it needs to read.
@@ -1141,19 +1084,19 @@ matched by a guarantee), we insert a **sorting aggregator**.
   the results of the query. This aggregator will be hooked up to the pgwire
   connection to the client.
 
-## Physical planning
+## 物理规划
 
 Logical plans are transformed into physical plans in a *physical planning
 phase*. See the [corresponding
 section](RFCS/distributed_sql.md#from-logical-to-physical) of the Distributed SQL RFC
 for details.  To summarize, each aggregator is planned as one or more
 *processors*, which we distribute starting from the data layout - `TABLE
-READER`s have multiple instances, split according to the ranges - each instance
-is planned on the lease holder of the relevant range. From that point on,
+READER`s have multiple instances, split according to the 域s - each instance
+is planned on the lease holder of the relevant 域. From that point on,
 subsequent processors are generally either colocated with their inputs, or
 planned as singletons, usually on the final destination node.
 
-### Processors
+### 处理器
 
 When turning a _logical plan_ into a _physical plan_, its nodes are turned into
 _processors_. Processors are generally made up of three components:
@@ -1178,9 +1121,9 @@ _processors_. Processors are generally made up of three components:
    * mirror: every row is sent to all output streams
    * hashing: each row goes to a single output stream, chosen according
      to a hash function applied on certain elements of the data tuples.
-   * by range: the router is configured with range information (relating to a
+   * by 域: the router is configured with 域 information (relating to a
      certain table) and is able to send rows to the nodes that are lease holders for
-     the respective ranges (useful for `JoinReader` nodes (taking index values
+     the respective 域s (useful for `JoinReader` nodes (taking index values
      to the node responsible for the PK) and `INSERT` (taking new rows to their
      lease holder-to-be)).
 
@@ -1208,7 +1151,7 @@ or
 ![Alternate physical plan](RFCS/images/distributed_sql_physical_plan_2.png?raw=true "Alternate physical Plan")
 
 
-## Execution infrastructure
+## 执行基础设施
 
 Once a physical plan has been generated, the system needs to divvy it up
 between the nodes and send it around for execution. Each node is responsible
@@ -1216,7 +1159,7 @@ for locally scheduling data processors and input synchronizers. Nodes also
 communicate with each other for connecting output routers to input
 synchronizers through a streaming interface.
 
-### Creating a local plan: the `ScheduleFlows` RPC
+### 创建一个本地计划：`ScheduleFlows` RPC
 
 Distributed execution starts with the gateway making a request to every node
 that's supposed to execute part of the plan asking the node to schedule the
@@ -1227,22 +1170,22 @@ physical plan nodes in it, the connections between them (input synchronizers,
 output routers) plus identifiers for the input streams of the top node in the
 plan and the output streams of the (possibly multiple) bottom nodes. A node
 might be responsible for multiple heterogeneous flows. More commonly, when a
-node is the lease holder for multiple ranges from the same table involved in
+node is the lease holder for multiple 域s from the same table involved in
 the query, it will run a `TableReader` configured with all the spans to be
-read across all the ranges local to the node.
+read across all the 域s local to the node.
 
 A node therefore implements a `ScheduleFlows` RPC which takes a set of flows,
 sets up the input and output [mailboxes](#mailboxes), creates the local
 processors and starts their execution.
 
-### Local scheduling of flows
+### 流的本地调度
 
 The simplest way to schedule the different processors locally on a node is
 concurrently: each data processor, synchronizer and router runs as a goroutine,
 with channels between them. The channels are buffered to synchronize producers
 and consumers to a controllable degree.
 
-### Mailboxes
+### 信箱
 
 Flows on different nodes communicate with each other over gRPC streams. To
 allow the producer and the consumer to start at different times,
@@ -1256,7 +1199,7 @@ established by the consumer using the `StreamMailbox` RPC, taking a mailbox id
 A diagram of a simple query using mailboxes for its execution:
 ![Mailboxes](RFCS/images/distributed_sql_mailboxes.png?raw=true)
 
-## A complex example: Daily Promotion
+## 一个复杂的例子：每日促销
 
 To give a visual intuition of all the concepts presented, we draw the physical plan of a relatively involved query. The
 point of the query is to help with a promotion that goes out daily, targeting
@@ -1296,5 +1239,5 @@ INSERT INTO DailyPromotion
     ON c.CustomerID = os.CustomerID)
 ```
 
-A possible physical plan:
+一个可能的物理计划：
 ![Physical plan](RFCS/images/distributed_sql_daily_promotion_physical_plan.png?raw=true)
