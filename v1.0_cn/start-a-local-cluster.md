@@ -2,20 +2,21 @@
 
 搭建并运行一个具有多个节点的本地 CockroachDB 集群，且每一个节点都监听不同的端口。
 
-## 搭建一个非可靠的本地集群
+## 搭建一个不安全的本地集群
 
-当安装完 CockroachDB 后，搭建一个非可靠的多节点本地集群将非常容易。
+当安装完 CockroachDB 后，搭建一个不安全的多节点本地集群将非常容易。
 
 > **注意：**<br>在一台主机上运行多个节点常被用来测试 CockroachDB，但实际部署时不推荐这样做。如何在生产环境中运行一个分布式物理机集群，详见[手动部署](https://www.cockroachlabs.com/docs/stable/manual-deployment.html)，[云端部署](https://www.cockroachlabs.com/docs/stable/cloud-deployment.html)或[业务流程](https://www.cockroachlabs.com/docs/stable/orchestration.html)。
 
 ### 目录
+
 * [开始之前](#开始之前)
 * [第一步：部署第一个节点](#第一步：部署第一个节点)
 * [第二步：向集群中添加节点](#第二步：向集群中添加节点)
 * [第三步：集群测试](#第三步：集群测试)
-* [第四步：集群监控](第四步：集群监控)
-* [第五步：停止集群](第五步：停止集群)
-* [第六步：重启集群](第六步：重启集群)
+* [第四步：集群监控](#第四步：集群监控)
+* [第五步：停止集群](#第五步：停止集群)
+* [第六步：重启集群](#第六步：重启集群)
 
 ## 开始之前
 
@@ -40,14 +41,14 @@ clusterID:  {dab8130a-d20b-4753-85ba-14d8956a294c}
 nodeID:     1
 ```
 
-以上命令以非可靠模式搭建了一个节点, 且接受大部分 [`cockroach 部署`](https://www.cockroachlabs.com/docs/stable/start-a-node.html) 默认设置。
+以上命令以非安全模式搭建了一个节点, 且接受大部分 [`cockroach 部署`](https://www.cockroachlabs.com/docs/stable/start-a-node.html) 默认设置。
 
-- `--insecure` 设置不加密消息。
-- 因为这只是一个本地集群，`--host=localhost` 告诉该节点只监听 `localhost`, 并且都使用默认端口 (`26257`) 进行对内和客户端通信以及处理来自管理接口(`8080`)的请求。
-- 节点的数据保存在 `cockroach-data` 目录。
-- [标准输出](https://www.cockroachlabs.com/docs/stable/start-a-node.html#standard-output) 提供了 CockroachDB 的使用帮助，如版本信息和 SQL 客户端的 URL。
+* `--insecure` 设置不加密消息。
+* 因为这只是一个本地集群，`--host=localhost` 告诉该节点只监听 `localhost`, 并且都使用默认端口 (`26257`) 进行对内和客户端通信以及处理来自管理接口(`8080`)的请求。
+* 节点的数据保存在 `cockroach-data` 目录。
+* [标准输出](https://www.cockroachlabs.com/docs/stable/start-a-node.html#standard-output) 提供了 CockroachDB 的使用帮助，如版本信息和 SQL 客户端的 URL。
 
-> **提示：**<br>每个节点的缓存空间都是系统空闲存储空间的 25%。当每台主机上都运行一个节点时，这样的设定是合理的。但当每台主机都运行多个节点，尤其是在可靠模式下测试时，这种设定将导致内存溢出错误。为了避免这种错误，可以在 `start` 命令中通过 `--cache` 来限制每个节点的缓存区大小。
+> **提示：**<br>每个节点的缓存空间都是系统空闲存储空间的 25%。当每台主机上都运行一个节点时，这样的设定是合理的。但当每台主机都运行多个节点，尤其是在安全模式下测试时，这种设定将导致内存溢出错误。为了避免这种错误，可以在 `start` 命令中通过 `--cache` 来限制每个节点的缓存区大小。
 
 ## 第二步：向集群中添加节点
 
@@ -105,7 +106,7 @@ $ cockroach sql --insecure
 > SELECT * FROM bank.accounts;
 ```
 
-```
+```sql
 +----+---------+
 | id | balance |
 +----+---------+
@@ -134,7 +135,7 @@ $ cockroach sql --insecure --port=26258
 > SELECT * FROM bank.accounts;
 ```
 
-```
+```sql
 +----+---------+
 | id | balance |
 +----+---------+
@@ -179,7 +180,7 @@ $ cockroach sql --insecure --port=26258
 > SELECT * FROM bank.accounts;
 ```
 
-```
+```sql
 +----+---------+
 | id | balance |
 +----+---------+
@@ -200,7 +201,7 @@ $ cockroach sql --insecure --port=26258
 
 如果你以后不需要再重启集群，你可以移除节点存储的数据：
 
-``` shell
+```sh
 $ rm -rf cockroach-data node2 node3
 ```
 
@@ -239,9 +240,278 @@ $ cockroach start --insecure \
 --join=localhost:26257
 ```
 
+## 搭建一个安全的本地集群
+
+采用[TLS 证书](https://www.cockroachlabs.com/docs/stable/create-security-certificates.html)进行网络通信加密。
+
+### 目录（安全模式）
+
+* [第一步：创建安全证书](#第一步：创建安全证书)
+* [第二步：创建第一个节点（安全模式）](#第二步：创建第一个节点（安全模式）)
+* [第三步：向集群中添加节点（安全模式）](#第三步：向集群中添加节点（安全模式）)
+* [第四步：测试集群（安全模式）](#第四步：测试集群（安全模式）)
+* [第五步：集群监控（安全模式）](#第五步：集群监控（安全模式）)
+* [第六步：停止集群（安全模式）](#第六步：停止集群（安全模式）)
+* [第七步：重启集群（安全模式）](#第七步：重启集群（安全模式）)
+
+## 第一步：创建安全证书
+
+```sh
+# Create a certs directory and safe directory for the CA key.
+# If using the default certificate directory (`${HOME}/.cockroach-certs`), make sure it is empty.
+mkdir certs
+mkdir my-safe-directory
+
+# Create the CA key pair:
+cockroach cert create-ca \
+--certs-dir=certs \
+--ca-key=my-safe-directory/ca.key
+
+# Create a client key pair for the root user:
+cockroach cert create-client \
+root \
+--certs-dir=certs \
+--ca-key=my-safe-directory/ca.key
+
+# Create a key pair for the nodes:
+cockroach cert create-node \
+localhost \
+$(hostname) \
+--certs-dir=certs \
+--ca-key=my-safe-directory/ca.key
+```
+
+* 第一段命令创建了一个目录来保存证书
+* 第二段命令创建了 CA 证书和秘钥：ca.crt 和 ca.key
+* 第三段命令创建客户端证书和秘钥，对于 root 用户来说则是 `client.root.crt` 和 `client.root.key`。这两个文件将用来在内置 SQL 终端和集群之间进行安全通信。(见[第四步](#第四步：测试集群（安全模式）))
+* 第四段命令创建节点证书和秘钥：`node.crt` 和 `node.key`，这两个文件将被用来进行节点之间的安全通信。通常，你可以为拥有唯一地址的节点单独生成这两个文件。不过在这个例子中，因为所有节点都是运行在本地的，因此你只需要生成一个节点的证书和秘钥。
+
+## 第二步：创建第一个节点（安全模式）
+
+```sh
+$ cockroach start \
+--certs-dir=certs \
+--host=localhost \
+--http-host=localhost
+```
+
+```sh
+CockroachDB node starting at 2017-07-27 10:29:13.675508543 -0400 EDT
+build:      CCL v1.0.4 @ 2017/07/27 12:56:53 (go1.8.3)
+admin:      https://ROACHs-MBP:8080
+sql:        postgresql://root@ROACHs-MBP:26257?sslcert=%2FUsers%2F...
+logs:       cockroach-data/logs
+store[0]:   path=cockroach-data
+status:     restarted pre-existing node
+clusterID:  {dab8130a-d20b-4753-85ba-14d8956a294c}
+nodeID:     1
+```
+
+以上命令在安全模式下创建了一个节点，且接受大部分 [`cockroach 部署`](https://www.cockroachlabs.com/docs/stable/start-a-node.html) 默认设置。
+
+* `--certs-dir` 指定目录指向证书和秘钥所在的目录
+* 因为这只是一个本地集群，`--host=localhost` 告诉该节点只监听 `localhost`, 并且都使用默认端口 (`26257`) 进行对内和客户端通信以及处理来自管理接口(`8080`)的请求。
+* 管理后台默认监听所有的接口，`--http-host` 可用来限定管理后台访问特定的端口，在这里指定了 `localhost`。
+* 节点的数据保存在 `cockroach-data` 目录。
+* [标准输出](https://www.cockroachlabs.com/docs/stable/start-a-node.html#standard-output) 提供了 CockroachDB 的使用帮助，如版本信息和 SQL 客户端的 URL。
+
+> **提示：**<br>每个节点的缓存空间都是系统空闲存储空间的 25%。当每台主机上都运行一个节点时，这样的设定是合理的。但当每台主机都运行多个节点，尤其是在安全模式下测试时，这种设定将导致内存溢出错误。为了避免这种错误，可以在 `start` 命令中通过 `--cache` 来限制每个节点的缓存区大小。
+
+## 第三步：向集群中添加节点（安全模式）
+
+打开一个新的终端，增加第二个节点，和非安全模式下的操作类似：
+
+```sh
+$ cockroach start \
+--certs-dir=certs \
+--store=node2 \
+--host=localhost \
+--port=26258 \
+--http-port=8081 \
+--http-host=localhost \
+--join=localhost:26257
+```
+
+再打开一个新的终端，增加第三个节点：
+
+```sh
+$ cockroach start \
+--certs-dir=certs \
+--store=node3 \
+--host=localhost \
+--port=26259 \
+--http-port=8082 \
+--http-host=localhost \
+--join=localhost:26257
+```
+
+## 第四步：测试集群（安全模式）
+
+```sh
+$ cockroach sql \
+--certs-dir=certs
+# Welcome to the cockroach SQL interface.
+# All statements must be terminated by a semicolon.
+# To exit: CTRL + D.
+```
+
+输入一些基础的 [CockroachDB SQL 语句](https://www.cockroachlabs.com/docs/stable/learn-cockroachdb-sql.html):
+
+```sql
+> CREATE DATABASE bank;
+```
+
+```sql
+> CREATE TABLE bank.accounts (id INT PRIMARY KEY, balance DECIMAL);
+```
+
+```sql
+> INSERT INTO bank.accounts VALUES (1, 1000.50);
+```
+
+```sql
+> SELECT * FROM bank.accounts;
+```
+
+```sql
++----+---------+
+| id | balance |
++----+---------+
+|  1 |  1000.5 |
++----+---------+
+(1 row)
+```
+
+退出节点 1 的 SQL 终端：
+
+```sql
+> \q
+```
+
+接下来连接节点 2 的 SQL 终端，此时应说明节点的非默认端口：
+
+```sh
+$ cockroach sql \
+--certs-dir=certs \
+--port=26258
+# Welcome to the cockroach SQL interface.
+# All statements must be terminated by a semicolon.
+# To exit: CTRL + D.
+```
+
+接下来运行相同的 `SELECT` 语句：
+
+```sql
+> SELECT * FROM bank.accounts;
+```
+
+```sql
++----+---------+
+| id | balance |
++----+---------+
+|  1 |  1000.5 |
++----+---------+
+(1 row)
+```
+
+可以看到节点 1 和节点 2 的输出仍然是相同的。
+
+退出节点 2
+
+```sql
+> \q
+```
+
+## 第五步：集群监控（安全模式）
+
+这一步和在[非安全模式下的集群监控](#第四步：集群监控)是一样的，但要注意的是此时浏览器会认为 CockroachDB 创建的证书是无效的，因此你需要点击一下浏览器弹出的警告消息来进入用户界面。
+
+## 第六步：停止集群（安全模式）
+
+当你完成对集群的测试，打开终端进入第一个节点，按 **CTRL + C** 来停止集群的运行。
+
+此时，仍然有 2 个节点在运行，因为大多数副本还是可用的，因此集群也仍然在运转中。为了验证集群是否有这种错误，连接节点 2 和 3 内置的 SQL 终端来进行测试。以下命令你可以在同一个终端中运行也可以在新的终端中运行：
+
+```sh
+$ cockroach sql \
+--certs-dir=certs \
+--port=26258
+# Welcome to the cockroach SQL interface.
+# All statements must be terminated by a semicolon.
+# To exit: CTRL + D.
+```
+
+```sql
+> SELECT * FROM bank.accounts;
+```
+
+```sql
++----+---------+
+| id | balance |
++----+---------+
+|  1 |  1000.5 |
++----+---------+
+(1 row)
+```
+
+退出 SQL 终端：
+
+```sql
+> \q
+```
+
+> **提示：**<br>节点 3 的关闭过程将耗费较长时间（约 1 分钟）并最终被强制关闭。这是因为当 3 个节点中只有一个留存时，大多数的副本数据都已不可用，因此集群也不再运行。若要加速这个过程，直接按 **CTRL + C**。
+
+如果你以后不需要再重启集群，你可以移除节点存储的数据：
+
+```sh
+$ rm -rf cockroach-data node2 node3
+```
+
+## 第七步：重启集群（安全模式）
+
+如果你决定使用集群进行进一步的测试，则需要从包含节点数据存储的目录中重新启动三个节点中的至少两个节点。
+
+从 `cockroach-data/` 父目录中重启第一个节点：
+
+```sh
+$ cockroach start \
+--certs-dir=certs \
+--host=localhost \
+--http-host=localhost
+```
+
+> **注意：**<br>随着唯一的一个节点重新回到线上，集群还不能运行，所以在重新启动第二个节点之前，你不会看到对上述命令的响应。
+
+打开一个新的终端，从 `node2/` 父节点中重启第二个节点：
+
+```sh
+$ cockroach start \
+--certs-dir=certs \
+--store=node2 \
+--host=localhost \
+--port=26258 \
+--http-port=8081 \
+--http-host=localhost \
+--join=localhost:26257
+```
+
+再打开一个新的终端，从 `node3/` 父节点中重启第三个节点：
+
+```sh
+$ cockroach start \
+--certs-dir=certs \
+--store=node3 \
+--host=localhost \
+--port=26259 \
+--http-port=8082 \
+--http-host=localhost \
+--join=localhost:26257
+```
+
 ## 下一步？
 
-- 学习更多关于 [CockroachDB SQL](https://www.cockroachlabs.com/docs/stable/learn-cockroachdb-sql.html) 和 [内置 SQL 终端](https://www.cockroachlabs.com/docs/stable/use-the-built-in-sql-client.html) 的内容。
-- 选择你喜欢的语言并对应[安装客户端驱动](https://www.cockroachlabs.com/docs/stable/install-client-drivers.html)
-- [构建 CockroachDB 的应用](https://www.cockroachlabs.com/docs/stable/build-an-app-with-cockroachdb.html)
-- 查看 [CockroachDB 核心优势](https://www.cockroachlabs.com/docs/stable/demo-data-replication.html)，如自动备份，数据均衡，容错机制和云迁移。
+* 学习更多关于 [CockroachDB SQL](https://www.cockroachlabs.com/docs/stable/learn-cockroachdb-sql.html) 和 [内置 SQL 终端](https://www.cockroachlabs.com/docs/stable/use-the-built-in-sql-client.html) 的内容。
+* 选择你喜欢的语言并对应[安装客户端驱动](https://www.cockroachlabs.com/docs/stable/install-client-drivers.html)
+* [构建 CockroachDB 的应用](https://www.cockroachlabs.com/docs/stable/build-an-app-with-cockroachdb.html)
+* 查看 [CockroachDB 核心优势](https://www.cockroachlabs.com/docs/stable/demo-data-replication.html)，如自动备份，数据均衡，容错机制和云迁移。

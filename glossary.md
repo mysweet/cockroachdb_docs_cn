@@ -24,4 +24,5 @@
 - automatic replication：自动复制
 - rebalancing：再平衡
 - fault tolerance：容错
+- metadata：元数据
 
