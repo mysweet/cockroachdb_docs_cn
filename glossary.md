@@ -7,14 +7,16 @@
 - write skew：写偏
 - conditional write：条件写
 - starvation：饥饿（？）
-- MVCC：？
-- txn：？
+- MVCC：多版本并发控制（Multi-Version Concurrent Control）？
 - intent：意向（？）
 - dangling：无主的（？）
 - Raft leadership：？
 - aggregator：聚合子（？）
 - upreplicate：向上复制（？）
 - replica：副本
+- epoch：时间戳（？）
+- lease：租约
+- HLC：？
 
 =======
 - MVCC：
