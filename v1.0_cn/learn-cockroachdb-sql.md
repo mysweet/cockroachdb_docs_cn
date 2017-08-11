@@ -1,3 +1,9 @@
+# SQL 语句
+
+本节将会向你介绍一部分最基本的 CockroachDB SQL 语句。完整的 SQL 语句列表以及相关资料可在 [SQL 语句](sql-statements.html) 中查看。
+
+CockroachDB 旨在提供标准的 SQL 扩展 ，但是一些标准的 SQL 功能却不能使用。详情可在  [SQL 特性支持](sql-feature-support.html) 查看。
+
 ## 创建数据库
 
 CockroachDB 带着一个单一、默认的系统数据库，其中包含着 CockroachDB 的元数据并且该数据库还是只读的。若要新建一个数据库，可以使用 [`CREATE DATABASE`](create-database.html) 后接数据库的名字，例如：
