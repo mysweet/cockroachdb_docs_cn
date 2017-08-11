@@ -14,13 +14,13 @@
 
 安装[Node.js pg driver](https://www.npmjs.com/package/pg)来使你的应用程序与CockroachDB通讯
 
-```
+```sh
 $ npm install pg
 ```
 
 在你页面上的样例app同样需要[async](https://www.npmjs.com/package/async)：
 
-```
+```sh
 $ npm install async
 ```
 
@@ -28,7 +28,7 @@ $ npm install async
 
 为了本教程的目的，你只需要运行一个非可靠的CockroachDB节点
 
-```
+```sh
 $ cockroach start --insecure \
 --store=hello-1 \
 --host=localhost
@@ -38,7 +38,7 @@ $ cockroach start --insecure \
 
 在一个新的终端，搭建节点2： 
 
-```
+```sh
 $ cockroach start --insecure \
 --store=hello-2 \
 --host=localhost \
@@ -49,7 +49,7 @@ $ cockroach start --insecure \
 
 在一个新的终端，搭建节点3：
 
-```
+```sh
 $ cockroach start --insecure \
 --store=hello-3 \
 --host=localhost \
@@ -62,7 +62,7 @@ $ cockroach start --insecure \
 
 在一个新的终端，作为`root`用户，使用[cockroach user](https://www.cockroachlabs.com/docs/stable/create-and-manage-users.html)命令来创建一个新的用户`maxroach`
 
-```
+```sh
 $ cockroach user set maxroach --insecure
 ```
 
@@ -70,13 +70,13 @@ $ cockroach user set maxroach --insecure
 
 作为`root`用户，使用[内置 SQL 客户端](https://www.cockroachlabs.com/docs/stable/use-the-built-in-sql-client.html)来创建一个`bank`数据库
 
-```
+```sh
 $ cockroach sql --insecure -e 'CREATE DATABASE bank'
 ```
 
 然后[授权](https://www.cockroachlabs.com/docs/stable/grant.html)给`maxroach`用户
 
-```
+```sh
 $ cockroach sql --insecure -e 'GRANT ALL ON DATABASE bank TO maxroach'
 ```
 
@@ -90,7 +90,7 @@ $ cockroach sql --insecure -e 'GRANT ALL ON DATABASE bank TO maxroach'
 
 下载[basic-sample.js](https://raw.githubusercontent.com/cockroachdb/docs/master/_includes/app/basic-sample.js)文件,或者你自己创建一个文件然后把代码赋值过去
 
-```
+```js
 var async = require('async');
 
 // Require the driver.
@@ -146,12 +146,11 @@ pool.connect(function (err, client, done) {
     finish();
   });
 });
-
 ```
 
 然后运行代码
 
-```
+```sh
 $ node basic-sample.js
 ```
 
@@ -171,7 +170,7 @@ Initial balances:
 
 > **注意：**<br>使用默认的`SERIALIZABLE`隔离层级，CockeoachDB可能会要求客户端在读写争用的情况下重启事务。CockroachDB提供了一个通用的在事务中运行的重启函数，并会在需要的时候重启。你可以在这里复制这个重启函数然后粘贴到你的代码中去。
 
-```
+```js
 var async = require('async');
 
 // Require the driver.
@@ -317,7 +316,7 @@ pool.connect(function (err, client, done) {
 
 然后运行代码
 
-```
+```sh
 $ node txn-sample.js
 ```
 
@@ -331,7 +330,7 @@ Balances after transfer:
 
 当然，如果你想要证明储存的资源已经从一个账户转到了另一个账户，使用[内置 SQL 客户端](https://github.com/TechCatsLab/cockroachdb_docs_cn/blob/master/v1.0/use-the-built-in-sql-client.html):
 
-```
+```sh
 $ cockroach sql --insecure -e 'SELECT id, balance FROM accounts' --database=bank
 ```
 
