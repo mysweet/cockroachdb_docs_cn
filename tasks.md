@@ -12,9 +12,9 @@
 | start-a-local-cluster.md               | tangxiaoji  |      |
 | start-a-local-cluster-in-docker.md     | jiachenhui  |      |
 | learn-cockroachdb-sql.md               | DoubleWoodH |      |
-| use-the-built-in-sql-client.md         |  tangxiaoji           |      |
+| use-the-built-in-sql-client.md         | tangxiaoji  |      |
 | build-an-app-with-cockroachdb.md       |             |      |
-| build-a-go-app-with-cockroachdb.md     |             |      |
+| build-a-go-app-with-cockroachdb.md     | DoubleWoodH |      |
 | build-a-python-app-with-cockroachdb.md |             |      |
 | build-a-nodejs-app-with-cockroachdb.md | zhaoyuxin   |      |
 | build-a-java-app-with-cockroachdb.md   | zhaoyuxin   |      |
