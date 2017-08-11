@@ -16,3 +16,10 @@
 - upreplicate：向上复制（？）
 - replica：副本
 
+=======
+- MVCC：
+- txn：事务
+- automatic replication：自动复制
+- rebalancing：再平衡
+- fault tolerance：容错
+
