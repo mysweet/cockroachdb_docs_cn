@@ -41,7 +41,7 @@ CockroachDB 实现了一个分层的架构。抽象的最高级是 SQL 层（当
 
 每个存储潜在包含很多域，即最低层的键-值数据单元。域使用 Raft 一致协议复制。下图是上图中五个节点中四个节点的放大版。每个域以三种方式使用 Raft 复制。颜色编码表示出相关的域复制。
 
-![域](media/域s.png)
+![域](media/ranges.png)
 
 每个物理节点提供两个基于 RPC 的键值 API：一个给外部的客户端，一个给内部的客户端（暴露敏感的运行功能）。两项服务接受批量的请求，并返回批量的回应。节点在能力和提供的界面上是对称的；每个有同样的二进制文件并且能够担任任何角色。
 
@@ -205,8 +205,6 @@ its commit timestamp has been pushed.
 **劣势**
 
 - 从非租约持有者复本的读仍然要求提醒租约持有者更新*读时间戳缓存*。
-  Reads from non-lease holder replicas still require a ping to the lease holder
-  to update the *read timestamp cache*.
 - 被放弃的事务可能阻塞竞争的写者最大到心跳间隔，尽管平均等待可能被认为更短（见
   [链接里的图](https://docs.google.com/document/d/1kBCu4sdGAnvLqpT-_2vaTbomNmX3_saayWEGYu1j7mQ/edit?usp=sharing)）。
   相比于检测并重启 2PC 以释放读和写锁，这可能是相当地更长。
@@ -344,11 +342,13 @@ https://www.cockroachlabs.com/blog/living-without-atomic-clocks/
 2\^(18 + 18) = 2\^36 个域；每个域寻址 2\^26 B，总共我们可以寻址 
 2\^(36+26) B = 2\^62 B = 4E 用户数据。
 
-对于一个给定的用户可寻址 `key1`，相关的 *meta1* 记录在 *meta1* 空间中的 `key1` 的后继键找到。因为，*meta1* 空间是稀疏的，后继键被定义为存在的下一个键。*meta1* 记录确定包含 *meta2* 
+对于一个给定的用户可寻址 `key1`，相关的 *meta1* 记录在 *meta1* 空间中的 `key1` 的后继键找到。
+因为，*meta1* 空间是稀疏的，后继键被定义为存在的下一个键。*meta1* 记录确定包含 *meta2* 
 记录的域，它使用同样的过程找到。*meta2* 记录确定包含 `key1` 的域，它又以同样的方式找到（见
 下面的例子中）。
 
-具体来说，元数据键被加上前缀 `\x02` (meta1) 和 `\x03` (meta2)；前缀 `\x02` 和 `\x03` 提供了期望的排序行为。因此， `key1`'s *meta1* 记录将位于 `\x02<key1>` 的后继键。
+具体来说，元数据键被加上前缀 `\x02` (meta1) 和 `\x03` (meta2)；前缀 `\x02` 和 `\x03` 提供了
+期望的排序行为。因此， `key1`'s *meta1* 记录将位于 `\x02<key1>` 的后继键。
 
 注：我们将每个域的结尾键附加给 meta{1,2} 记录，因为 RocksDB 迭代器只支持一个 Seek() 界面，
 它是作为一个 Ceil()。使用域的开始键将造成 Seek() 寻找在我们正在寻找的索引记录的元数据*之后*的
@@ -357,7 +357,8 @@ https://www.cockroachlabs.com/blog/living-without-atomic-clocks/
 下面的例子展示了有三个域数据的映射的目录结构。
 directory structure for a map with three ranges worth of data. 
 
-省略号表示填充整个数据域的另外的键/值对。为了清晰，例子使用 `meta1` 和 `meta2` 指前缀 `\x02` 和 `\x03`。除了分裂域需要知道元数据布局的域元数据更新的事实外，域元数据本身不需要特别的处理或引导。
+省略号表示填充整个数据域的另外的键/值对。为了清晰，例子使用 `meta1` 和 `meta2` 指前缀 `\x02` 
+和 `\x03`。除了分裂域需要知道元数据布局的域元数据更新的事实外，域元数据本身不需要特别的处理或引导。
 
 **域 0** (位于服务器 `dcrama1:8000`, `dcrama2:8000`, `dcrama3:8000`)
 
@@ -429,7 +430,8 @@ directory structure for a map with three ranges worth of data.
 - ...
 - `<lastkeyN+1>`: `<lastvalueN+1>`
 
-注意，选择 域 `262144` 仅仅是一个近似值。通过一个单个元数据域可寻址的域的实际数量取决于键的大小。如果试图保持小的键尺寸，可寻址的域总数会增加，反之亦然。
+注意，选择 域 `262144` 仅仅是一个近似值。通过一个单个元数据域可寻址的域的实际数量取决于键的
+大小。如果试图保持小的键尺寸，可寻址的域总数会增加，反之亦然。
 
 从上面的例子中可以清楚看到，键位置检索需要最多三次读以得到 `<key>` 的值：
 
@@ -437,375 +439,265 @@ directory structure for a map with three ranges worth of data.
 2. `meta2<key>` 的下限，
 3. `<key>`。
 
-对于小的映射，整个查询在一次对域 0 的 RPC 完成。包含少于 16T 数据的映射将需要两次查询。客户端缓存两级的域元数据，我们期望对于各个客户端的数据本地性将会是高的。客户端可能会留有陈旧的缓存内容。如果在一次查询中，被咨询的域没有满足客户端的期望，客户端驱逐了陈旧的缓存内容并可能进行一次新的查询。
+对于小的映射，整个查询在一次对域 0 的 RPC 完成。包含少于 16T 数据的映射将需要两次查询。
+客户端缓存两级的域元数据，我们期望对于各个客户端的数据本地性将会是高的。客户端可能会
+留有陈旧的缓存内容。如果在一次查询中，被咨询的域没有满足客户端的期望，客户端驱逐了陈旧的
+缓存内容并可能进行一次新的查询。
 
 # Raft - 域副本的一致性
 
-Each 域 is configured to consist of three or more replicas, as specified by
-their ZoneConfig. The replicas in a 域 maintain their own instance of a
-distributed consensus algorithm. We use the [*Raft consensus algorithm*](https://raftconsensus.github.io)
-as it is simpler to reason about and includes a reference implementation
-covering important details.
-[ePaxos](https://www.cs.cmu.edu/~dga/papers/epaxos-sosp2013.pdf) has
-promising performance characteristics for WAN-distributed replicas, but
-it does not guarantee a consistent ordering between replicas.
+每个域被配置由三个或更多的副本构成，在它们的 ZoneConfig 中指定。一个域中的副本维护它们自己的
+分布式共识算法。我们使用[*Raft 共识算法*](https://raftconsensus.github.io)，因为它易于理解
+并包括一个覆盖重要细节的参考实现。
+[ePaxos](https://www.cs.cmu.edu/~dga/papers/epaxos-sosp2013.pdf) 具有对广域网分布式
+负载有前途的性能特征，但是它不保证副本之间的一致顺序。
 
-Raft elects a relatively long-lived leader which must be involved to
-propose commands. It heartbeats followers periodically and keeps their logs
-replicated. In the absence of heartbeats, followers become candidates
-after randomized election timeouts and proceed to hold new leader
-elections. Cockroach weights random timeouts such that the replicas with
-shorter round trip times to peers are more likely to hold elections
-first (not implemented yet). Only the Raft leader may propose commands;
-followers will simply relay commands to the last known leader.
+Raft 选举一个生存期相对长的领导者，它必须参与提出命令。它定期对对追随者发出心跳并复制它们的
+心跳。在没有心跳的情况下，追随者在一个随机的选举超时之后变为候选，并继而举行新的领导者选举。
+ CockroachDB 衡量随机的超时，这样，具有到同等副本较短的往返时间的副本更可能首先举行选举（尚未实现）。
+ 只有 Raft 领导者可以提出命令；追随者仅仅将命令传给最后知道的领导者。
 
-Our Raft implementation was developed together with CoreOS, but adds an extra
-layer of optimization to account for the fact that a single Node may have
-millions of consensus groups (one for each 域). Areas of optimization
-are chiefly coalesced heartbeats (so that the number of nodes dictates the
-number of heartbeats as opposed to the much larger number of 域s) and
-batch processing of requests.
-Future optimizations may include two-phase elections and quiescent 域s
-(i.e. stopping traffic completely for inactive 域s).
+我们的 Raft 实现是和 CoreOS 一起开发的，但是增加了额外的一层优化，以处理单一节点可能有数百万
+共识组（每个域一个共识组）的事实。优化的领域主要是合并心跳（这样，节点的数量而不是大的额多的
+域的数量决定了心跳的数量）和请求的批量处理。
+进一步的优化可能包含两阶段选举和休眠域。（即，对不活跃的域完全停止流量）。
 
 # 域租约
 
-As outlined in the Raft section, the replicas of a 域 are organized as a
-Raft group and execute commands from their shared commit log. Going through
-Raft is an expensive operation though, and there are tasks which should only be
-carried out by a single replica at a time (as opposed to all of them).
-In particular, it is desirable to serve authoritative reads from a single
-Replica (ideally from more than one, but that is far more difficult).
+如在 Raft 一节中提到的，一个域的副本被组织为 Raft 组，并从它们共享的提交日志执行命令。
+虽然通过Raft 是一个昂贵的操作，有些任务应该在一个时间由一个副本（而不是所有的）执行。
+特别的，从一个单一副本提供权威性读是可取的。
 
-For these reasons, Cockroach introduces the concept of **域租约**:
-This is a lease held for a slice of (database, i.e. hybrid logical) time.
-A replica establishes itself as owning the lease on a 域 by committing
-a special lease acquisition log entry through raft. The log entry contains
-the replica node's epoch from the node liveness table--a system
-table containing an epoch and an expiration time for each node. A node is
-responsible for continuously updating the expiration time for its entry
-in the liveness table. Once the lease has been committed through raft
-the replica becomes the lease holder as soon as it applies the lease
-acquisition command, guaranteeing that when it uses the lease it has
-already applied all prior writes on the replica and can see them locally.
+出于这些原因，CockroachDB 引入了**域租约**的概念：
+这是一个（数据库，即，混合逻辑）时间的一个租约。一个副本通过 Raft 提交一个特别的租约
+获取日志条目而使其获得租约。日志条目包含来自节点副本活跃度表 -- 一个包含时间戳和每个
+节点的有效时间的系统表，的节点时期。每个节点负责持续更新它在活跃度表中的有效时间。一
+旦租约通过 Raft 被提交，只要副本使用了租约获取命令，它马上变为租约的持有者，保证了当
+它使用租约时，它已经将以前的所有的写应用于该副本并能在本地看到它们。
 
-To prevent two nodes from acquiring the lease, the requestor includes a copy
-of the lease that it believes to be valid at the time it requests the lease.
-If that lease is still valid when the new lease is applied, it is granted,
-or another lease is granted in the interim and the requested lease is
-ignored. A lease can move from node A to node B only after node A's
-liveness record has expired and its epoch has been incremented.
+为防止两个节点获得租约，请求者收录了在它认为在它请求租约时有效的租约拷贝。当新的租约
+被应用时，如果被收录的租约仍旧有效，则被发放，否则，另一个租约在过渡期被发放，而被请
+求的租约被忽略。只有当节点 A 的活跃度记录失效而且它的时间戳被被增加后，租约可以从节点
+A 移到节点 B。
 
-Note: 域 leases for 域s within the node liveness table keyspace and
-all 域s that precede it, including meta1 and meta2, are not managed using
-the above mechanism to prevent circular dependencies.
+注：在节点活跃度表键空间和所有在它之前的域，包括meta1 和 meta2，的域租约，不使用上面的
+机制管理以避免循环依赖。
 
-A replica holding a lease at a specific epoch can use the lease as long as
-the node epoch hasn't changed and the expiration time hasn't passed.
-The replica holding the lease may satisfy reads locally, without incurring the
-overhead of going through Raft, and is in charge or involved in handling
-域-specific maintenance tasks such as splitting, merging and rebalancing
+只要节点时间戳不改变而且有效时间没有过，在一个特定时间戳持有一个租约的副本就能只用这个
+租约。持有副本的副本可能在本地满足读，而不需要引发通过 Raft 的开销，而且负责或参与处理
+特定于域的维护任务，如分裂、合并和再平衡。
 
-All Reads and writes are generally addressed to the replica holding
-the lease; if none does, any replica may be addressed, causing it to try
-to obtain the lease synchronously. Requests received by a non-lease holder
-(for the HLC timestamp specified in the request's header) fail with an
-error pointing at the replica's last known lease holder. These requests
-are retried transparently with the updated lease by the gateway node and
-never reach the client.
+所有的读和写一般分给持有租约的副本；如果没有，可以选择任意副本，使它试图同步获取租约。
+被非租约持有者（对于在请求者的头中指定的 HLC 时间戳）收到的请求失败，错误指向副本最后
+知道的租约持有者。这些请求被网关节点用更新的租约透明地重试，而且从不会到达客户端。
 
-Since reads bypass Raft, a new lease holder will, among other things, ascertain
-that its timestamp cache does not report timestamps smaller than the previous
-lease holder's (so that it's compatible with reads which may have occurred on
-the former lease holder). This is accomplished by letting leases enter
-a <i>stasis period</i> (which is just the expiration minus the maximum clock
-offset) before the actual expiration of the lease, so that all the next lease
-holder has to do is set the low water mark of the timestamp cache to its
-new lease's start time.
+由于读绕过了 Raft，一个新的租约持有者，和其他事物一起，确保它的时间戳缓存不报告比以前
+的租约持有者小的时间戳（因此，它和可能发生在前一个租约持有者的读兼容）。这是通过在租约
+的实际到期之前让租约进入一个<i>淤滞期</i> （即到期时间减去最大时钟位移）做到的，因此，
+下一个租约持有者要做的是设置时间戳缓存的低水位为它的新租约的开始时间。
 
-As a lease enters its stasis period, no more reads or writes are served, which
-is undesirable. However, this would only happen in practice if a node became
-unavailable. In almost all practical situations, no unavailability results
-since leases are usually long-lived (and/or eagerly extended, which can avoid
-the stasis period) or proactively transferred away from the lease holder, which
-can also avoid the stasis period by promising not to serve any further reads
-until the next lease goes into effect.
+当租约进入它的淤滞期，不提供任何的读和写。这是不受欢迎的。然而，在实际中只有一个节点变为
+不可同才会发生。在绝大部分的实际情形中，不可用不会发生，因为租约通常是长期的（和/或被
+急切地延长，这可以避免淤滞期）或从租约持有者主动转移走，通过承诺不提供任何进一步的读知道
+下一个租约生效，这也能避免淤滞期。
 
 ## 与 Raft 领导地位共存
 
-The 域租约 is completely separate from Raft leadership, and so without
-further efforts, Raft leadership and the 域 lease might not be held by the
-same Replica. Since it's expensive to not have these two roles colocated (the
-lease holder has to forward each proposal to the leader, adding costly RPC
-round-trips), each lease renewal or transfer also attempts to colocate them.
-In practice, that means that the mismatch is rare and self-corrects quickly.
+域租约与 Raft 领导地位完全分离，因此，如果没有进一步的动作， Raft 领导地位和域租约
+不能被同一个副本持有。由于不合并这两个角色是昂贵的（租约持有者必须每个建议转给领导者，
+增加了高代价的 RPC 往返），每个租约延期或转移也试图合并它们。实际上，这意味着不匹配
+极少而且自纠正是快速的。
 
 ## 命令执行流
 
-This subsection describes how a lease holder replica processes a
-read/write command in more details. Each command specifies (1) a key
-(or a 域 of keys) that the command accesses and (2) the ID of a
-域 which the key(s) belongs to. When receiving a command, a node
-looks up a 域 by the specified 域 ID and checks if the 域 is
-still responsible for the supplied keys. If any of the keys do not
-belong to the 域, the node returns an error so that the client will
-retry and send a request to a correct 域.
+这一小节更详细地描述了一个租约持有者副本如何处理一个读写命令。每条命令指定 (1) 命令
+访问的一个键（或键的一个域），(2) 键属于的的域的 ID。当收到一条命令，节点按照域 ID 
+检索域，并检查域是否仍旧负责所提供的键。如果任何键不属于这个域，节点返回错误，因此，
+客户端将重试并发送一个请求到一个争取的域。
 
-When all the keys belong to the 域, the node attempts to
-process the command. If the command is an inconsistent read-only
-command, it is processed immediately. If the command is a consistent
-read or a write, the command is executed when both of the following
-conditions hold:
+如果所有的键属于该域，节点试图处理这条命令。如果，命令是一条不一致的只读命令，它被
+立即处理。如果命令是一致的读或写，当下面两个条件满足时，命令被执行：
 
-- The 域 replica has a 域 lease.
-- There are no other running commands whose keys overlap with
-the submitted command and cause read/write conflict.
+- 域副本有一个域租约。
+- 没有其他运行命令的键与被提交的命令交叠并造成读/写冲突。
 
-When the first condition is not met, the replica attempts to acquire
-a lease or returns an error so that the client will redirect the
-command to the current lease holder. The second condition guarantees that
-consistent read/write commands for a given key are sequentially
-executed.
+当第一个条件不满足，副本试图获得一个租约或者返回一个错误，因此，客户端将命令重定向到
+当前的租约持有者。第二个条件保证对于一个给定键的一致的读/写命令被顺序执行。
 
-When the above two conditions are met, the lease holder replica processes the
-command. Consistent reads are processed on the lease holder immediately.
-Write commands are committed into the Raft log so that every replica
-will execute the same commands. All commands produce deterministic
-results so that the 域 replicas keep consistent states among them.
+如果以上两个条件被满足，租约持有者副本处理命令。一致的读在租约持有者上被立即处理。
+写命令被提交到 Raft 日志，这样，每个副本将执行同样的命令。所有的命令产生确定性的结果，
+因此，域副本在它们之间保持一致状态。
 
-When a write command completes, all the replica updates their response
-cache to ensure idempotency. When a read command completes, the lease holder
-replica updates its timestamp cache to keep track of the latest read
-for a given key.
+当一个写命令完成，所有的副本更新它们的响应缓存以保证幂等。当一个读命令完成，租约持有者
+副本更新其时间戳缓存以追踪一个给定键的最后读。
 
-There is a chance that a 域 lease gets expired while a command is
-executed. Before executing a command, each replica checks if a replica
-proposing the command has a still lease. When the lease has been
-expired, the command will be rejected by the replica.
-
+有可能当一条命令执行时一个域租约过期。在执行一条命令之前，每个副本检查建议命令的副本
+是否有一个静止的租约。当租约过期，命令将被副本拒绝。
 
 # 分裂/合并域
 
-Nodes split or merge 域s based on whether they exceed maximum or
-minimum thresholds for capacity or load. 域s exceeding maximums for
-either capacity or load are split; 域s below minimums for *both*
-capacity and load are merged.
+节点根据它们是否超出了容量或负载的最大或最小界限分裂或合并域。超出了容量或者负载最大界限
+的域被分裂，低于容量*和*负载最小界限的域被合并。
 
-域s maintain the same accounting statistics as accounting key
-prefixes. These boil down to a time series of data points with minute
-granularity. Everything from number of bytes to read/write queue sizes.
-Arbitrary distillations of the accounting stats can be determined as the
-basis for splitting / merging. Two sensible metrics for use with
-split/merge are 域 size in bytes and IOps. A good metric for
-rebalancing a replica from one node to another would be total read/write
-queue wait times. These metrics are gossipped, with each 域 / node
-passing along relevant metrics if they’re in the bottom or top of the
-域 it’s aware of.
+域维护会计统计作为会计键的前缀。这些最小为分钟粒度的一个时间序列数据点。从字节的数目到
+读/写队列的大小的一切。会计统计数据的任意摘要可被决定为分裂/合并的基础。两个用于分裂/合并
+的实用的度量数据是以字节计算的域大小和IOps。用于从一个节点到另一个节点的副本再平衡的一个
+好的度量是读/写队列等待的总时间。这些度量被闲话，对于每个域/节点传递相关的度量，如果它们
+在它知道的域的底部或顶部。
 
-A 域 finding itself exceeding either capacity or load threshold
-splits. To this end, the 域 lease holder computes an appropriate split key
-candidate and issues the split through Raft. In contrast to splitting,
-merging requires a 域 to be below the minimum threshold for both
-capacity *and* load. A 域 being merged chooses the smaller of the
-域s immediately preceding and succeeding it.
+发现自己超出容量或负载的界限的域分裂。为此，域租约持有者计算一个适当的分裂键候选并通过
+Raft 发出分裂。相比于分裂，合并要求域低于容量*和*负载的下限。被合并的域选择它前面和后面
+的域中较小的一个。
 
-Splitting, merging, rebalancing and recovering all follow the same basic
-algorithm for moving data between roach nodes. New target replicas are
-created and added to the replica set of source 域. Then each new
-replica is brought up to date by either replaying the log in full or
-copying a snapshot of the source replica data and then replaying the log
-from the timestamp of the snapshot to catch up fully. Once the new
-replicas are fully up to date, the 域 metadata is updated and old,
-source replica(s) deleted if applicable.
+分裂、合并、再平衡和恢复都遵循同样的基本算法在节点间移动数据。新的目标副本被创建并添加到
+源域的副本集合。随后，每个新的副本被更新，或者是通过完整重播日志，或者是通过拷贝一个源副本
+数据的快照并从快照的时间戳重播日志以完全赶上。一旦新的副本被完全更新，域元数据被更新，而且，
+如果适用，旧的、源副本被删除。
 
-**Coordinator** (lease holder replica)
+**协调者** （租约持有者副本）
 
 ```
-if splitting
-  Split域(split_key): splits happen locally on 域 replicas and
-  only after being completed locally, are moved to new target replicas.
-else if merging
-  Choose new replicas on same servers as target 域 replicas;
-  add to replica set.
-else if rebalancing || recovering
-  Choose new replica(s) on least loaded servers; add to replica set.
+if 分裂
+  分裂域(split_key): 分裂发生在域副本本地而且只在本地完成后，被移动到目标副本。
+else if 合并
+  在同样的服务器上选择新的副本作为目标域副本；添加到副本集合。
+else if 再平衡 || 恢复
+  在最小负载的服务器上选择副本；添加到副本集合。
 ```
 
-**New Replica**
+**新副本**
 
-*Bring replica up to date:*
+*更新副本：*
 
 ```
-if all info can be read from replicated log
-  copy replicated log
+if 所有数据可以从被复制的日志读取
+  拷贝复制的日志
 else
-  snapshot source replica
-  send successive Read域 requests to source replica
-  referencing snapshot
+  快照源副本
+  发送连续的读域请求到源副本
+  引用快照
 
-if merging
-  combine 域s on all replicas
-else if rebalancing || recovering
-  remove old 域 replica(s)
+if 合并
+  在所有的副本上合并域
+else if 再平衡 || 恢复
+  移除旧的域副本
 ```
 
-Nodes split 域s when the total data in a 域 exceeds a
-configurable maximum threshold. Similarly, 域s are merged when the
-total data falls below a configurable minimum threshold.
+当在一个域中的所有数据超出了一个可配置的最大界限时，节点分裂域。类似地，当所有数据低于一个
+可配置的最小界限，域被合并。
 
-**TBD: flesh this out**: Especially for merges (but also rebalancing) we have a
-域 disappearing from the local node; that 域 needs to disappear
-gracefully, with a smooth handoff of operation to the new owner of its data.
+**待定：充实之**: 特别对于合并（以及再平衡），我们有一个域从本地节点消失；该域需要优雅地消失，
+将操作平稳地交给其数据的新的所有者。
 
-域s are rebalanced if a node determines its load or capacity is one
-of the worst in the cluster based on gossipped load stats. A node with
-spare capacity is chosen in the same datacenter and a special-case split
-is done which simply duplicates the data 1:1 and resets the 域
-configuration metadata.
+如果一个节点基于闲话的负载数据，决定了它的负载或容量是集群中最差的之一，域被再平衡。在同样的
+数据中心内有空余容量的节点被选择，而且，完成一个特别情况的分裂，它只是 1:1 复制数据并重置域
+配置元数据。
 
 # 节点分配（通过 Gossip）
 
-New nodes must be allocated when a 域 is split. Instead of requiring
-every node to know about the status of all or even a large number
-of peer nodes --or-- alternatively requiring a specialized curator or
-master with sufficiently global knowledge, we use a gossip protocol to
-efficiently communicate only interesting information between all of the
-nodes in the cluster. What’s interesting information? One example would
-be whether a particular node has a lot of spare capacity. Each node,
-when gossiping, compares each topic of gossip to its own state. If its
-own state is somehow “more interesting” than the least interesting item
-in the topic it’s seen recently, it includes its own state as part of
-the next gossip session with a peer node. In this way, a node with
-capacity sufficiently in excess of the mean quickly becomes discovered
-by the entire cluster. To avoid piling onto outliers, nodes from the
-high capacity set are selected at random for allocation.
+当域分裂时，新的节点必须被分配。不需要每个节点知道所有或者一个大数目的对等节点的状态 --或者-- 
+一个具有足够全局知识的监护人节点或者主节点，我们使用闲话 (gossip) 协议在集群中所有节点间有效
+沟通有意义的信息。什么事有意义的信息？一个例子是，一个特定的节点是否有很多空余容量。每个节点，
+在闲话的时候，将闲话的每个话题与自己的状态比较。如果它自己的状态比它最近看到的话题中的最没有
+意义的在某种程度上“更有意义”，它将自己的状态包含作为与一个对等节点的下一次闲话会话的一部分
+。用这种方式，一个具有足够多容量超过平均数的节点很快被整个集群发现。为避免堆放在局外，高容量
+集合中的节点被随机选择分配。
 
-The gossip protocol itself contains two primary components:
+闲话协议本身包含两个主要元素：
 
-- **Peer Selection**: each node maintains up to N peers with which it
-  regularly communicates. It selects peers with an eye towards
-  maximizing fanout. A peer node which itself communicates with an
-  array of otherwise unknown nodes will be selected over one which
-  communicates with a set containing significant overlap. Each time
-  gossip is initiated, each nodes’ set of peers is exchanged. Each
-  node is then free to incorporate the other’s peers as it sees fit.
-  To avoid any node suffering from excess incoming requests, a node
-  may refuse to answer a gossip exchange. Each node is biased
-  towards answering requests from nodes without significant overlap
-  and refusing requests otherwise.
+- **对等选择**：每个节点维护最多 N 个对等节点用于经常通信。它着眼于最大化扇出选择对等节点。
+  相比于一个与一组有很大重叠的节点，一个对等节点本身与一系列不然的话不知道的节点会被选择。
+  每次闲话被启动，每个节点的对等节点集合互相交换。然后，如果认为合适，每个节点可以自由并入
+  其他节点的对等节点。为避免任何节点苦于过多的来的请求，一个节点可能拒绝回答一个闲话交换。
+  每个节点偏向于回答来自没有重大重叠的节点的请求，并拒绝其他的请求。
 
-  Peers are efficiently selected using a heuristic as described in
-  [Agarwal & Trachtenberg (2006)](https://drive.google.com/file/d/0B9GCVTp_FHJISmFRTThkOEZSM1U/edit?usp=sharing).
+  节点的有效选择使用
+  [Agarwal & Trachtenberg (2006)](https://drive.google.com/file/d/0B9GCVTp_FHJISmFRTThkOEZSM1U/edit?usp=sharing) 
+  中描述的一个启发。
 
-  **TBD**: how to avoid partitions? Need to work out a simulation of
-  the protocol to tune the behavior and see empirically how well it
-  works.
+  **待定**：如何避免分区？需要作出协议的一个模拟，以调整行为并观察在经验上它工作得怎么样。
 
-- **Gossip Selection**: what to communicate. Gossip is divided into
-  topics. Load characteristics (capacity per disk, cpu load, and
-  state [e.g. draining, ok, failure]) are used to drive node
-  allocation. 域 statistics (域 read/write load, missing
-  replicas, unavailable 域s) and network topology (inter-rack
-  bandwidth/latency, inter-datacenter bandwidth/latency, subnet
-  outages) are used for determining when to split 域s, when to
-  recover replicas vs. wait for network connectivity, and for
-  debugging / sysops. In all cases, a set of minimums and a set of
-  maximums is propagated; each node applies its own view of the
-  world to augment the values. Each minimum and maximum value is
-  tagged with the reporting node and other accompanying contextual
-  information. Each topic of gossip has its own protobuf to hold the
-  structured data. The number of items of gossip in each topic is
-  limited by a configurable bound.
+- **闲话选择**：沟通什么。闲话被分为话题。负载特征（每个磁盘的容量，CPU 负载，以及状态
+  [即，过载、好、失败]）被用于驱动节点分配。域统计数据（域 读/写，消失的副本，不可用的域）
+  和网络拓扑（机架间带宽/延迟，数据中心间带宽/延迟，子网停运）被用于决定何时分裂域，何时恢复
+  副本 vs. 等待网络连接，以及用于调试/系统操作（sysops）。在所有的情况中，一组最小值和一组
+  最大值被传播；每个节点使用自己的世界观增加值每个最小和最大值被打上报告节点的标签，以及其他
+  伴随的语境信息。闲话的每个话题有其自己的 protobuf 用以保留结构化的数据。每个话题的闲话条目
+  数量受限于一个可配置的界限。
 
-  For efficiency, nodes assign each new item of gossip a sequence
-  number and keep track of the highest sequence number each peer
-  node has seen. Each round of gossip communicates only the delta
-  containing new items.
+  出于高效的目的，节点分配闲话的每个新的话题一个序列号，并追踪每个对等节点看到过的最高序列号。
+  每轮闲话只沟通包含新条目的变化。
 
 # 节点和集群度量
 
-Every component of the system is responsible for exporting interesting
-metrics about itself. These could be histograms, throughput counters, or
-gauges.
+系统的每个元素负责输出关于它自己的有意义的度量数据。这些可以是直方图、吞吐量计数，或者标准尺寸。
 
-These metrics are exported for external monitoring systems (such as Prometheus)
-via a HTTP endpoint, but CockroachDB also implements an internal timeseries
-database which is stored in the replicated key-value map.
+这些度量数据被输出通过一个 HTTP 端点用于外部的监视系统（比如 Prometheus），但是 CockroachDB 也实现
+了一个内部的时间序列数据库，它存放在被复制的键-值映射中。
 
-Time series are stored at Store granularity and allow the admin dashboard
-to efficiently gain visibility into a universe of information at the Cluster,
-Node or Store level. A [periodic background process](RFCS/time_series_culling.md)
-culls older timeseries data, downsampling and eventually discarding it.
+时间序列被以存储（Store）粒度存放，并允许管理仪表板有效地获取集群、节点和存储级别数据的全局可见性。
+[周期性背景处理](RFCS/time_series_culling.md)扑杀旧的时间序列数据，下采样并最终丢弃。
 
 # 键前缀会计和区
 
-Arbitrarily fine-grained accounting is specified via
-key prefixes. Key prefixes can overlap, as is necessary for capturing
-hierarchical relationships. For illustrative purposes, let’s say keys
-specifying rows in a set of databases have the following format:
+任意细粒度的会计信息通过键前缀指定。如果必要，键前缀可以重叠，以获取分级关系。为了说明的目的，
+我们可以说，在一组数据库中指定行的键有如下格式：
 
 `<db>:<table>:<primary-key>[:<secondary-key>]`
 
-In this case, we might collect accounting with
-key prefixes:
+在这种情况下，我们可能用下面的键前缀收集会计信息：
 
 `db1`, `db1:user`, `db1:order`,
 
-Accounting is kept for the entire map by default.
+会计信息缺省为整个映射保留。
 
 ## 会计
-to keep accounting for a 域 defined by a key prefix, an entry is created in
-the accounting system table. The format of accounting table keys is:
+
+为保留一个由键前缀定义的域的会计信息，在会计系统表中创建一个条目。会计表的键格式是：
 
 `\0acct<key-prefix>`
 
-In practice, we assume each node is capable of caching the
-entire accounting table as it is likely to be relatively small.
+实际上，因为会计表相对小，我们假设每个节点能够缓存整个会计表。
 
-Accounting is kept for key prefix 域s with eventual consistency for
-efficiency. There are two types of values which comprise accounting:
-counts and occurrences, for lack of better terms. Counts describe
-system state, such as the total number of bytes, rows,
-etc. Occurrences include transient performance and load metrics. Both
-types of accounting are captured as time series with minute
-granularity. The length of time accounting metrics are kept is
-configurable. Below are examples of each type of accounting value.
+为了高效，会计信息为键前缀域保留有最终一致性。有两类值构成会计信息：计数和事件，没有更好的
+名称了。计数描述系统状态，如总字节数、行数等等。事件包括短暂的性能和负载度量数据。会计的
+两种类型被捕捉为分钟粒度的时间序列会计度量保留的时间长度是可配置的。下面是每种会计值类型的例子。
 
-**System State Counters/Performance**
+**系统状态计数器/性能**
 
-- Count of items (e.g. rows)
-- Total bytes
-- Total key bytes
-- Total value length
-- Queued message count
-- Queued message total bytes
-- Count of values \< 16B
-- Count of values \< 64B
-- Count of values \< 256B
-- Count of values \< 1K
-- Count of values \< 4K
-- Count of values \< 16K
-- Count of values \< 64K
-- Count of values \< 256K
-- Count of values \< 1M
-- Count of values \> 1M
-- Total bytes of accounting
+- 条目（即，行）数
+- 字节总数
+- 键字节总数
+- 值总长度
+- 排队的消息数
+- 排队消息总字节
+- 值数目 \< 16B
+- 值数目 \< 64B
+- 值数目 \< 256B
+- 值数目 \< 1K
+- 值数目 \< 4K
+- 值数目 \< 16K
+- 值数目 \< 64K
+- 值数目 \< 256K
+- 值数目 \< 1M
+- 值数目 \> 1M
+- 会计总字节数
 
 
-**Load Occurrences**
+**负载发生**
 
-- Get op count
-- Get total MB
-- Put op count
-- Put total MB
-- Delete op count
-- Delete total MB
-- Delete 域 op count
-- Delete 域 total MB
-- Scan op count
-- Scan op MB
-- Split count
-- Merge count
+- 得到 op 数
+- 得到总 MB
+- 设置 op 数
+- 设置总 MB
+- 删除 op 数
+- 删除总 MB
+- 删除域 op 数
+- 删除域总 MB
+- 扫描 op 数
+- 扫描 op MB
+- 分裂数
+- 合并数
 
 Because accounting information is kept as time series and over many
 possible metrics of interest, the data can become numerous. Accounting
@@ -839,6 +731,7 @@ the number of messages before an update is visible at the root to `2*log N`,
 where `N` is the number of 域s in the key prefix.
 
 ## 区
+
 zones are stored in the map with keys prefixed by
 `\0zone` followed by the key prefix to which the zone
 configuration applies. Zone values specify a protobuf containing
