@@ -6,4 +6,7 @@
 - conditional write：条件写
 - starvation：饥饿（？）
 - MVCC：
-- txn：
+- txn：事务
+- automatic replication：自动复制
+- rebalancing：再平衡
+- fault tolerance：容错
