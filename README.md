@@ -14,10 +14,14 @@ design.md 是设计文档，是简单的 Markdown 格式。
 
 media 和 RFCS 目录里是设计文档引用的图片文件。
 
-中文译文以 gitbook 格式组织。
+中文译文以 gitbook 格式组织。在当前目录下运行命令：
 
-glossary.md 为词汇表。
+```sh
+$ gitbook serve
+```
 
-### 分工
+[glossary.md](glossary.md) 为词汇表。
 
-见[任务](tasks.md)。
+### 分工及进度
+
+见[任务表](tasks.md)。
