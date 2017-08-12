@@ -16,6 +16,7 @@
 | build-an-app-with-cockroachdb.md       | DoubleWoodH | 完成   |      |      |
 | build-a-go-app-with-cockroachdb.md     | DoubleWoodH |      |      |      |
 | build-a-python-app-with-cockroachdb.md | zhaoyuxin   |      |      |      |
+| build-a-python-app-with-cockroachdb-sqlalchemy.md | | | | |
 | build-a-nodejs-app-with-cockroachdb.md | zhaoyuxin   | 完成   |      |      |
 | build-a-java-app-with-cockroachdb.md   | zhaoyuxin   | 完成   |      |      |
 | demo-data-replication.md               |             |      |      |      |
