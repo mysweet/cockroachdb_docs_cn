@@ -11,9 +11,9 @@
 | install-cockroachdb.md                 | tangxiaoji  |      |      |      |
 | start-a-local-cluster.md               | tangxiaoji  |      |      |      |
 | start-a-local-cluster-in-docker.md     | jiachenhui  |      |      |      |
-| learn-cockroachdb-sql.md               | DoubleWoodH |      |      |      |
+| learn-cockroachdb-sql.md               | DoubleWoodH | 完成   |      |      |
 | use-the-built-in-sql-client.md         | tangxiaoji  |      |      |      |
-| build-an-app-with-cockroachdb.md       | DoubleWoodH |      |      |      |
+| build-an-app-with-cockroachdb.md       | DoubleWoodH | 完成   |      |      |
 | build-a-go-app-with-cockroachdb.md     | DoubleWoodH |      |      |      |
 | build-a-python-app-with-cockroachdb.md | zhaoyuxin   |      |      |      |
 | build-a-nodejs-app-with-cockroachdb.md | zhaoyuxin   | 完成   |      |      |
