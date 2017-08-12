@@ -18,4 +18,7 @@
 | build-a-python-app-with-cockroachdb.md |             |      | | |
 | build-a-nodejs-app-with-cockroachdb.md | zhaoyuxin   |      | | |
 | build-a-java-app-with-cockroachdb.md   | zhaoyuxin   |      | | |
-
+| demo-data-replication.md |||||
+| demo-fault-tolerance-and-recovery.md |||||
+| demo-automatic-rebalancing.md |||||
+| demo-automatic-cloud-migration.md |||||
