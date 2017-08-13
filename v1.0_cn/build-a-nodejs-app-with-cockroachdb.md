@@ -26,17 +26,19 @@ $ npm install async
 
 ## 第二步：搭建一个集群
 
-为了本教程的目的，你只需要运行一个非可靠的CockroachDB节点
+为了本教程的目的，你只需要在非安全模式下运行一个的CockroachDB命令
 
 ```sh
 $ cockroach start --insecure \
+
 --store=hello-1 \
+
 --host=localhost
 ```
 
-但是就像你在[搭建一个本地集群](https://www.cockroachlabs.com/docs/stable/start-a-local-cluster.html)的教程中看到过，如果你想要模拟一个真正的集群，搭建和加入附加节点是非常容易的。
+但是就像你在[搭建一个本地集群](https://www.cockroachlabs.com/docs/stable/start-a-local-cluster.html)的教程中看到过，如果你想要模拟一个真正的集群，搭建和加入附加代码是非常容易的。
 
-在一个新的终端，搭建节点2： 
+在一个新的终端，运行命令2：
 
 ```sh
 $ cockroach start --insecure \
@@ -47,7 +49,7 @@ $ cockroach start --insecure \
 --join=localhost:26257
 ```
 
-在一个新的终端，搭建节点3：
+在一个新的终端，运行命令3：
 
 ```sh
 $ cockroach start --insecure \

@@ -1,6 +1,4 @@
 
-
-
 # 用CockroachDB做一个Java的App
 
 了解怎样在一个使用了jdbc 驱动程序的简单Java应用程序中使用CockroachDB
@@ -19,49 +17,35 @@
 
 ## 第二步：搭建一个集群
 
-为了本教程的目的，你只需要运行一个非可靠的CockroachDB节点
+为了本教程的目的，你只需要在非安全模式下运行一个的CockroachDB命令
 
 ```sh
 $ cockroach start --insecure \
-
 --store=hello-1 \
-
 --host=localhost
 ```
 
-但是就像你在[搭建一个本地集群](https://www.cockroachlabs.com/docs/stable/start-a-local-cluster.html)的教程中看到过，如果你想要模拟一个真正的集群，搭建和加入附加节点是非常容易的。
+但是就像你在[搭建一个本地集群](https://www.cockroachlabs.com/docs/stable/start-a-local-cluster.html)的教程中看到过，如果你想要模拟一个真正的集群，搭建和加入附加代码是非常容易的。
 
-在一个新的终端，搭建节点2：
+在一个新的终端，运行命令2：
 
 ```sh
-
 $ cockroach start --insecure \
-
 --store=hello-2 \
-
 --host=localhost \
-
 --port=26258 \
-
 --http-port=8081 \
-
 --join=localhost:26257
 ```
 
-在一个新的终端，搭建节点3：
+在一个新的终端，运行命令3：
 
 ```sh
-
 $ cockroach start --insecure \
-
 --store=hello-3 \
-
 --host=localhost \
-
 --port=26259 \
-
 --http-port=8082 \
-
 --join=localhost:26257
 ```
 
@@ -89,7 +73,7 @@ $ cockroach sql --insecure -e 'GRANT ALL ON DATABASE bank TO maxroach'
 
 ## 第五步：运行Java代码
 
-现在你有一个数据库和一个用户，你将运行代码来创建一个表格并添加一些行，然后你将运行代码来读取并更新这些值来作为一个原子事务
+现在你有一个数据库和一个用户，你将运行代码来创建一个表格并添插入行数据，然后你将运行代码来读取并更新这些值来作为一个原子事务
 
 ### 基本声明
 
