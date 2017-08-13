@@ -4,11 +4,11 @@
 
 | 文件名                                      | 翻译          | 状态   | 审稿   | 状态   |
 | ---------------------------------------- | ----------- | ---- | ---- | ---- |
-| design.md                                | tiansiyuan  | 完成   |      |      |
+| design.md                                | tiansiyuan  | 完成  |      |      |
 | add-column.md                            | tangxiaoji  |      |      |      |
 | add-constraint.md                        | Wbofeng     |      |      |      |
 | alter-column.md                          | jiachenhui  |      |      |      |
-| install-cockroachdb.md                   | tangxiaoji  |      |      |      |
+| install-cockroachdb.md                   | tangxiaoji  | 完成 | tiansiyuan | 完成 |
 | start-a-local-cluster.md                 | tangxiaoji  |      |      |      |
 | secure-a-cluster                         |             |      |      |      |
 | start-a-local-cluster-in-docker.md       | jiachenhui  |      |      |      |
