@@ -22,7 +22,6 @@
 为了本教程的目的，你只需要运行一个非可靠的CockroachDB节点
 
 ```sh
-
 $ cockroach start --insecure \
 
 --store=hello-1 \
