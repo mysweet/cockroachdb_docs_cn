@@ -9,14 +9,14 @@
 | add-constraint.md                        | Wbofeng     |      |      |      |
 | alter-column.md                          | jiachenhui  |      |      |      |
 | install-cockroachdb.md                   | tangxiaoji  | 完成 | tiansiyuan | 完成 |
-| start-a-local-cluster.md                 | tangxiaoji  |  完成    |      |      |
+| start-a-local-cluster.md                 | tangxiaoji  | 完成    |      |      |
 | secure-a-cluster                         |             |      |      |      |
 | start-a-local-cluster-in-docker.md       | jiachenhui  |      |      |      |
 | learn-cockroachdb-sql.md                 | DoubleWoodH | 完成   |      |      |
-| use-the-built-in-sql-client.md           | tangxiaoji  |  完成    |      |      |
+| use-the-built-in-sql-client.md           | tangxiaoji  | 完成    |      |      |
 | build-an-app-with-cockroachdb.md         | DoubleWoodH | 完成   |      |      |
 | build-a-go-app-with-cockroachdb.md       | DoubleWoodH | 50%  |      |      |
-| build-a-go-app-with-cockroachdb-gorm     |   tangxiaoji          |      |      |      |
+| build-a-go-app-with-cockroachdb-gorm     | tangxiaoji          |      |      |      |
 | build-a-python-app-with-cockroachdb.md   | zhaoyuxin   |      |      |      |
 | build-a-python-app-with-cockroachdb-sqlalchemy.md |             |      |      |      |
 | build-a-nodejs-app-with-cockroachdb.md   | zhaoyuxin   | 完成   |      |      |
