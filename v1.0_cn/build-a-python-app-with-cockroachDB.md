@@ -1,102 +1,89 @@
-# 用CockroachDB做一个Python的App
+# 使用 CockroachDB 开发一个 Python 应用程序
 
-了解怎样在一个使用了psycopg2 驱动程序的简单Python应用程序中使用CockroachDB
+- 使用 psycopg2 
+- [使用 SQLAlchemy ](build-a-python-app-with-cockroachdb-sqlalchemy.md)
 
-[使用psycopg2](https://www.cockroachlabs.com/docs/stable/build-a-python-app-with-cockroachdb.html) [使用SQLAlchemy](https://www.cockroachlabs.com/docs/stable/build-a-python-app-with-cockroachdb-sqlalchemy.html)
+本教程将向你介绍如何使用与 PostgreSQL 兼容的驱动程序或 ORM，使用CockroachDB，构建一个简单的 Python 应用程序。我们已经测试过并且可以推荐使用 [Python psycopg2 驱动程序](http://initd.org/psycopg/docs/) 和 [SQLAIchemy ORM](https://docs.sqlalchemy.org/en/latest/)，所以它们在这里介绍。
 
-本教程将向你介绍如何使用与PostgreSQL兼容的驱动程序或ORM构建一个简单的使用CockroachDB的Python应用程序。我们已经测试过并且可以推荐使用[Python psycopg2](http://initd.org/psycopg/docs/)驱动程序和[SQLAIchemy ORM](https://docs.sqlalchemy.org/en/latest/)，所以这些在这里起重要作用
+## 准备
 
-## 开始之前
-
-确保你已经安装[CockroachDB](https://www.cockroachlabs.com/docs/stable/install-cockroachdb.html)
+确保你已经安装了 [CockroachDB](https://www.cockroachlabs.com/docs/stable/install-cockroachdb.html)。
 
 ## 第一步：安装 pdycopg2 驱动程序
 
-运行以下命令来安装Python psycopg2驱动程序
+运行以下命令来安装 Python psycopg2 驱动程序：
 
 ```sh
 $ pip install psycopg2
 ```
 
-安装pdycopg2的其他方式，请参照[官方文档](http://initd.org/psycopg/docs/install.html)
+安装 psycopg2 的其他方式，请参照[官方文档](http://initd.org/psycopg/docs/install.html)。
 
-## 第二步：搭建一个集群
+## 第二步：启动集群
 
-为了本教程的目的，你只需要在非安全模式下运行一个的CockroachDB命令
+为了本教程的目的，你只需要一个在非安全模式下运行的 CockroachDB 节点：
 
 ```sh
 $ cockroach start --insecure \
-
 --store=hello-1 \
-
 --host=localhost
 ```
 
-但是就像你在[搭建一个本地集群](https://www.cockroachlabs.com/docs/stable/start-a-local-cluster.html)的教程中看到过，如果你想要模拟一个真正的集群，搭建和加入附加节点是非常容易的。
+但是就像在[启动一个本地集群](start-a-local-cluster.md)教程中看到过的，如果你想要模拟一个真正的集群，启动和加入附加节点是非常容易的。
 
-在一个新的终端，运行命令2：
+在一个新的终端，启动节点 2：
 
 ```sh
 $ cockroach start --insecure \
-
 --store=hello-2 \
-
 --host=localhost \
-
 --port=26258 \
-
 --http-port=8081 \
-
 --join=localhost:26257
 ```
 
-在一个新的终端，运行命令3：
+在一个新的终端，启动节点 3：
 
 ```sh
 $ cockroach start --insecure \
-
 --store=hello-3 \
-
 --host=localhost \
-
 --port=26259 \
-
 --http-port=8082 \
-
 --join=localhost:26257
 ```
 
-## 第三步：创建一个用户
+## 第三步：创建用户
 
-在一个新的终端，作为`root`用户，使用[cockroach user](https://www.cockroachlabs.com/docs/stable/create-and-manage-users.html)命令来创建一个新的用户`maxroach`
+在一个新的终端，以 `root` 用户身份使用 [cockroach user](create-and-manage-users.md) 命令创建一个新用户 `maxroach`。
 
 ```sh
 $ cockroach user set maxroach --insecure
 ```
 
-## 第四步：创建一个数据库和授权
+## 第四步：创建数据库并授权
 
-作为`root`用户，使用[内置 SQL 客户端](https://www.cockroachlabs.com/docs/stable/use-the-built-in-sql-client.html)来创建一个`bank`数据库
+以 `root`用户身份使用[内建 SQL 客户端](use-the-built-in-sql-client.md)创建数据库 `bank`。
 
 ```sh
 $ cockroach sql --insecure -e 'CREATE DATABASE bank'
 ```
 
-然后[授权](https://www.cockroachlabs.com/docs/stable/grant.html)给`maxroach`用户
+然后[授权](grant.md)给 `maxroach` 用户。
 
 ```sh
 $ cockroach sql --insecure -e 'GRANT ALL ON DATABASE bank TO maxroach'
 ```
 
-## 第五步：运行Python代码
+## 第五步：运行 Python 代码
 
-现在你有一个数据库和一个用户，你将运行代码来创建一个表格并添加一些行，然后你将运行代码来读取并更新这些值来作为一个[原子事务](https://www.cockroachlabs.com/docs/stable/transactions.html)
+现在，有了数据库和用户，你将运行代码来创建一张表并插入一些行，然后，你将运行代码作为[原子事务](transactions.md)读取并更新值。
 
 ### 基本声明
 
-首先，用下面的代码作为`maxroach`用户去连接并且执行一些基本的SQL声明，创建一个表格并添加一些行，然后读取并输出这些行
+首先，用下面的代码以用户 `maxroach` 的身份连接并且执行一些基本的 SQL 语句，创建一张表并插入一些行，然后读取并打印这些行。
 
-下载[basic-sample.py](https://raw.githubusercontent.com/cockroachdb/docs/master/_includes/app/basic-sample.py)文件,或者你自己创建一个文件然后把代码赋值过去
+下载 [basic-sample.py](https://raw.githubusercontent.com/cockroachdb/docs/master/_includes/app/basic-sample.py) 文件，或者，自己创建一个文件然后把代码复制过去。
 
 ```python
 # Import the driver.
@@ -130,13 +117,13 @@ conn.close()
 
 ```
 
-然后运行代码
+然后运行代码：
 
 ```sh
 $ python basic-sample.py
 ```
 
-输出的应该是
+输出应该是：
 
 ```
 Initial balances:
@@ -144,15 +131,15 @@ Initial balances:
 ['2', '250']
 ```
 
-### 事务(重启逻辑)
+### 事务(带重试逻辑)
 
-接下来，使用下面的代码再次作为`maxroach`用户去连接，但是这次执行一批声明作为一个原子事务来将储存的东西从一个账户转移到另一个账户，其中所有包含的语句都被提交或者中止
+接下来，使用下面的代码再次以用户 `maxroach` 的身份连接，但是这次作为一个原子事务执行一组语句，将资金从一个账户转移到另一个账户，其中所有包含的语句都被提交或者退出。
 
-下载[txn-sample.py](https://raw.githubusercontent.com/cockroachdb/docs/master/_includes/app/txn-sample.py)文件，或者你自己创建一个文件然后把代码复制过去
+下载 [txn-sample.py](https://raw.githubusercontent.com/cockroachdb/docs/master/_includes/app/txn-sample.py) 文件，或者，自己创建一个文件然后把代码复制过去。
 
 > **注意：**
 
-> 使用默认的`SERIALIZABLE`隔离层级，CockeoachDB可能会要求客户端在读写争用的情况下重启事务。CockroachDB提供了一个通用的在事务中运行的重启函数，并会在需要的时候重启。你可以在这里复制这个重启函数然后粘贴到你的代码中去。
+> 使用默认的 `SERIALIZABLE` 隔离级别，CockeoachDB 可能会要求客户端在读写竞争的情况下[重试事务](transactions.md#transaction-retries)。CockroachDB 提供了一个通用的*重试函数*，在事务中运行，并在需要时重试。你可以复制粘贴这里的重试函数到你的代码中去。
 
 ```python
 # Import the driver.
@@ -226,13 +213,13 @@ conn.close()
 
 ```
 
-然后运行代码
+然后运行代码：
 
 ```sh
 $ python txn-sample.py
 ```
 
-输出应该是
+输出应该是：
 
 ```
 Balances after transfer:
@@ -240,7 +227,7 @@ Balances after transfer:
 ['2', '350']
 ```
 
-另外，如果你想验证储存的资源已经从一个账户转移到了另一个账户，使用[内置SQL客户端](https://www.cockroachlabs.com/docs/stable/use-the-built-in-sql-client.html)
+然而，如果你想验证资金已经从一个账户转移到了另一个账户，使用[内建 SQL 客户端](use-the-built-in-sql-client.md)：
 
 ```sh
 $ cockroach sql --insecure -e 'SELECT id, balance FROM accounts' --database=bank
@@ -256,13 +243,13 @@ $ cockroach sql --insecure -e 'SELECT id, balance FROM accounts' --database=bank
 (2 列)
 ```
 
-## 接下来做什么？
+## 下一步
 
-阅读更多关于使用[Python psycopg driver](http://initd.org/psycopg/docs/)
+阅读更多关于使用 [Python psycopg driver](http://initd.org/psycopg/docs/)。
 
-您可能也有兴趣使用本地集群来探索以下CoreroachDB核心功能:
+你也可能有兴趣使用本地集群来探索以下 CoreroachDB 核心功能:
 
-- [数据备份](https://www.cockroachlabs.com/docs/stable/demo-data-replication.html)
-- [容错 & 修复](https://www.cockroachlabs.com/docs/stable/demo-fault-tolerance-and-recovery.html)
-- [自动化再平衡](https://www.cockroachlabs.com/docs/stable/demo-automatic-rebalancing.html)
+- [数据备份](demo-data-replication.md)
+- [容错 & 修复](demo-fault-tolerance-and-recovery.md)
+- [自动化再平衡](demo-automatic-rebalancing.md)
 

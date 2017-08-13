@@ -17,7 +17,7 @@
 | build-an-app-with-cockroachdb.md         | DoubleWoodH | 完成   |            |      |
 | build-a-go-app-with-cockroachdb.md       | DoubleWoodH | 50%  |            |      |
 | build-a-go-app-with-cockroachdb-gorm.md  | tangxiaoji  |      |            |      |
-| build-a-python-app-with-cockroachdb.md   | zhaoyuxin   | 完成   | tiansiyuan | 开始 |
+| build-a-python-app-with-cockroachdb.md   | zhaoyuxin   | 完成   | tiansiyuan | 完成 |
 | build-a-python-app-with-cockroachdb-sqlalchemy.md | zhaoyuxin   |      |            |      |
 | build-a-nodejs-app-with-cockroachdb.md   | zhaoyuxin   | 完成   |            |      |
 | build-a-nodejs-app-with-cockroachdb-sequelize.md |             |      |            |      |
