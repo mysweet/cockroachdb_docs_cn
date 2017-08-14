@@ -183,7 +183,7 @@ $ docker rm roach1 roach2 roach3
 
 ## 下一步
 
-- 学习更过关于 [CockroachDB SQL](learn-cockroachdb-sql.md) 和 [内建 SQL 客户端](use-the-built-in-sql-client.md)
+- 学习更多关于 [CockroachDB SQL](learn-cockroachdb-sql.md) 和 [内建 SQL 客户端](use-the-built-in-sql-client.md)
 - 安装你喜欢的语言的[客户端驱动程序](install-client-drivers.md) 
 - [用 CockroachDB 构建一个应用](build-an-app-with-cockroachdb.md)
 - [探索 CockroachDB 的核心功能](demo-data-replication.md)，比如自动复制，再平衡和容错。
