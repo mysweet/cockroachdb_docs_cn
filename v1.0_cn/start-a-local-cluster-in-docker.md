@@ -10,9 +10,9 @@
 
 确认你已经[安装了官方的 CockroachDB Docker 镜像](install-cockroachdb.md)。
 
-## 第一步：创建桥网
+## 第一步：创建桥接网络
 
-由于你将要在单台主机上运行多个 Docker 容器，每个容器运行一个 CockroachDB 节点，需要创建 Docker 称为 [桥网](https://docs.docker.com/engine/userguide/networking/#/a-bridge-network)的。桥网将使容器能够作为单一集群通信，同时保持与外部网络的隔离。
+由于你将要在单台主机上运行多个 Docker 容器，每个容器运行一个 CockroachDB 节点，需要创建 Docker 称为的[桥接网络](https://docs.docker.com/engine/userguide/networking/#/a-bridge-network)。桥接网络将使容器能够作为单一集群通信，同时保持与外部网络的隔离。
 
 ```shell
 $ docker network create -d bridge roachnet
@@ -42,7 +42,7 @@ cockroachdb/cockroach:v1.0.4 start --insecure
 
 - `--hostname`: 容器的主机名称。你将使用它来将其它容器/节点加入集群。
 
-- `--net`: 这个容器要加入的桥网。更多细节请见第一步。
+- `--net`: 这个容器要加入的桥接网络。更多细节请见第一步。
 
 - `-p 26257:26257 -p 8080:8080`: 这些标志映射节点间和客户端-节点间通信的默认端口 (`26257`)，以及从容器到主机的管理 UI (`8080`) 的 HTTP 请求的默认端口。这使容器间通信成为可能，并且可以从浏览器调用管理 UI。
 

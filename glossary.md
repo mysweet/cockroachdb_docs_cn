@@ -4,7 +4,7 @@
 - store：存储（？）
 - zone：区
 - map：映射
-- surviviablity: 生存性（？）
+- surviviablity: 生存性
 - write skew：写偏
 - conditional write：条件写
 - starvation：饥饿
@@ -21,6 +21,7 @@
 - PostgreSQL wire protocol：
 - DAG：数据库可用性组(Database Availability Group)；有向无环图(Directed Acyclic Graph)
 - point-lookup：点查找（？）
+- bridge network：桥接网络
 
 =======
 - MVCC：
