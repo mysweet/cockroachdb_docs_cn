@@ -16,11 +16,11 @@
 | use-the-built-in-sql-client.md           | tangxiaoji  | 完成   |            |      |
 | build-an-app-with-cockroachdb.md         | DoubleWoodH | 完成   |            |      |
 | build-a-go-app-with-cockroachdb.md       | DoubleWoodH | 完成   |            |      |
-| build-a-go-app-with-cockroachdb-gorm.md  | tangxiaoji  |      |            |      |
+| build-a-go-app-with-cockroachdb-gorm.md  | tangxiaoji  | 完成   |            |      |
 | build-a-python-app-with-cockroachdb.md   | zhaoyuxin   | 完成   | tiansiyuan | 完成   |
 | build-a-python-app-with-cockroachdb-sqlalchemy.md | zhaoyuxin   |      |            |      |
 | build-a-nodejs-app-with-cockroachdb.md   | zhaoyuxin   | 完成   |            |      |
-| build-a-nodejs-app-with-cockroachdb-sequelize.md |             |      |            |      |
+| build-a-nodejs-app-with-cockroachdb-sequelize.md | tangxiaoji  |      |            |      |
 | build-a-java-app-with-cockroachdb.md     | zhaoyuxin   | 完成   |            |      |
 | build-a-java-app-with-cockroachdb-hibernate.md |             |      |            |      |
 | demo-data-replication.md                 | DoubleWoodH |      |            |      |
