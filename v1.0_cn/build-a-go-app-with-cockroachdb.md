@@ -97,3 +97,58 @@ Initial balances:
 ### 事务（带有重试逻辑）
 
 其次，使用下面的代码可以让你作为 `maxroach` 用户重连数据库，但是这次将会执行一些可被当做原子事务的语句把基金从一个用户转移到另一个用户，在这里所有包含的语句不是提交就是已经中止。
+
+下载 <a href="https://raw.githubusercontent.com/cockroachdb/docs/master/_includes/app/txn-sample.go" download><code>txn-sample.go</code></a> 文件，或者自己新建一个文件然后将代码复制进去。
+
+因为带有默认的可串行化的隔离层，当万一出现读写争用的情况，CockroachDB 可能要求 [客户端重试一个事务](transactions.html#transaction-retries)。CockroachDB 会提供一个通用的 **重试** 函数，它运行在事务里面，必要时候就会重试。对 Go 来说，这个 CockroachDB 重试函数在 CockroachDB 的 Go 客户端的 `crdb` 包里。正如下面所做的， 克隆这个库到你的 `$GOPATH` 里：
+
+```shell
+$ mkdir -p $GOPATH/github.com/cockroachdb
+```
+
+```shell
+$ cd $GOPATH/github.com/cockroachdb
+```
+
+```shell
+$ git clone git@github.com:cockroachdb/cockroach-go.git
+```
+
+然后运行代码：
+
+```shell
+$ go run txn-sample.go
+```
+
+输出应该是：
+
+```shell
+Success
+```
+
+然而，如果你想要核实这个已经从一个账户转移到另一个账户的基金，可以使用 [内置 SQL 客户端](use-the-built-in-sql-client.html)：
+
+```shell
+$ cockroach sql --insecure -e 'SELECT id, balance FROM accounts' --database=bank
+```
+
+```
++----+---------+
+| id | balance |
++----+---------+
+|  1 |     900 |
+|  2 |     350 |
++----+---------+
+(2 rows)
+```
+
+## 下一节
+
+如果想了解更多，可以使用 [Go pq driver](https://godoc.org/github.com/lib/pq)
+
+你可能对使用本地集群来探索核心的 CockroachDB 特点很感兴趣：
+
+-   [数据复制](demo-data-replication.html)
+-   [容错和恢复](demo-fault-tolerance-and-recovery.html)
+-   [自动的再平衡](demo-automatic-rebalancing.html)
+-   [自动的云迁移](demo-automatic-cloud-migration.html)
