@@ -23,7 +23,7 @@
 | build-a-nodejs-app-with-cockroachdb-sequelize.md |             |      |            |      |
 | build-a-java-app-with-cockroachdb.md     | zhaoyuxin   | 完成   |            |      |
 | build-a-java-app-with-cockroachdb-hibernate.md |             |      |            |      |
-| demo-data-replication.md                 |             |      |            |      |
+| demo-data-replication.md                 | DoubleWoodH |      |            |      |
 | demo-fault-tolerance-and-recovery.md     |             |      |            |      |
 | demo-automatic-rebalancing.md            |             |      |            |      |
 | demo-automatic-cloud-migration.md        |             |      |            |      |
