@@ -25,5 +25,5 @@
 | build-a-java-app-with-cockroachdb-hibernate.md |             |      |            |      |
 | demo-data-replication.md                 | DoubleWoodH |      |            |      |
 | demo-fault-tolerance-and-recovery.md     |             |      |            |      |
-| demo-automatic-rebalancing.md            |             |      |            |      |
+| demo-automatic-rebalancing.md            | tiansiyuan  | 开始  |            |      |
 | demo-automatic-cloud-migration.md        |             |      |            |      |
