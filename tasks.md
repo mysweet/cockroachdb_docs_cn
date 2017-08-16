@@ -6,7 +6,7 @@
 | ---------------------------------------- | ----------- | ---- | ---------- | ---- |
 | design.md                                | tiansiyuan  | 完成   |            |      |
 | add-column.md                            | tangxiaoji  | 完成   |            |      |
-| add-constraint.md                        | Wbofeng     |      |            |      |
+| add-constraint.md                        | Wbofeng     | 完成   |            |      |
 | alter-column.md                          | jiachenhui  |      |            |      |
 | install-cockroachdb.md                   | tangxiaoji  | 完成   | tiansiyuan | 完成   |
 | start-a-local-cluster.md                 | tangxiaoji  | 完成   |            |      |
