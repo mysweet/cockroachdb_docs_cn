@@ -19,7 +19,7 @@
 | build-a-go-app-with-cockroachdb-gorm.md  | tangxiaoji  | 完成   |            |      |
 | build-a-python-app-with-cockroachdb.md   | zhaoyuxin   | 完成   | tiansiyuan | 完成   |
 | build-a-python-app-with-cockroachdb-sqlalchemy.md | zhaoyuxin   |      |            |      |
-| build-a-nodejs-app-with-cockroachdb.md   | zhaoyuxin   | 完成   |            |      |
+| build-a-nodejs-app-with-cockroachdb.md   | zhaoyuxin   | 完成   | tangxiaoji      |      |
 | build-a-nodejs-app-with-cockroachdb-sequelize.md | tangxiaoji  |      |            |      |
 | build-a-java-app-with-cockroachdb.md     | zhaoyuxin   | 完成   |            |      |
 | build-a-java-app-with-cockroachdb-hibernate.md |             |      |            |      |
