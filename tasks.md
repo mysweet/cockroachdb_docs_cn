@@ -24,6 +24,6 @@
 | build-a-java-app-with-cockroachdb.md     | zhaoyuxin   | 完成   |            |      |
 | build-a-java-app-with-cockroachdb-hibernate.md |             |      |            |      |
 | demo-data-replication.md                 | DoubleWoodH | 完成   |            |      |
-| demo-fault-tolerance-and-recovery.md     |             |      |            |      |
+| demo-fault-tolerance-and-recovery.md     | DoubleWoodH |      |            |      |
 | demo-automatic-rebalancing.md            | tiansiyuan  | 完成   |            |      |
 | demo-automatic-cloud-migration.md        |             |      |            |      |
