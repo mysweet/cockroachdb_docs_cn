@@ -14,14 +14,18 @@
     * [概述](v1.0_cn/build-an-app-with-cockroachdb.md)
     * [Go](v1.0_cn/build-a-go-app-with-cockroachdb.md)
     * [Python](v1.0_cn/build-a-python-app-with-cockroachdb.md)
-    * [Ruby]
+    * [Ruby 待译，欢迎认领](tasks.md)
     * [Java](v1.0_cn/build-a-java-app-with-cockroachdb.md)
     * [Node.js](v1.0_cn/build-a-nodejs-app-with-cockroachdb.md)
-    * [C++]
-    * [Clojure]
-    * [PHP]
-    * [Rust]
+    * [C++ 待译，欢迎认领](tasks.md)
+    * [Clojure 待译，欢迎认领](tasks.md)
+    * [PHP 待译，欢迎认领](tasks.md)
+    * [Rust 待译，欢迎认领](tasks.md)
   * 探索核心功能
+    * [数据复制](v1.0_cn/demo-data-replication.md)
+    * [容错与恢复](v1.0_cn/demo-fault-tolerance-and-recovery.md)
+    * [自动再平衡](v1.0_cn/demo-automatic-rebalancing.md)
+    * [跨云部署和迁移](v1.0_cn/demo-automatic-cloud-migration.md) 
   * 开发
   * 部署
   * 管理
