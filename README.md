@@ -14,6 +14,8 @@
     - 不要修改原文，相应的中文译文放在 v1.0\_cn 目录（文件名不变）和 design\_cn.md 中。
   
     - 译文中的链接如果是指向本目录内的文件，将后缀由 html 改为 md，并且不需要加服务器域名和路径。
+    
+    - 原文中以形式`images/admin_ui_sql_queries.png`引用图形文件，在译文里可以改为`../images/admin_ui_sql_queries.png`。
 
 - 其他引用的文件
   
