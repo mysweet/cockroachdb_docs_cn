@@ -26,4 +26,4 @@
 | demo-data-replication.md                 | DoubleWoodH | 完成   |            |      |
 | demo-fault-tolerance-and-recovery.md     | DoubleWoodH |      |            |      |
 | demo-automatic-rebalancing.md            | tiansiyuan  | 完成   |            |      |
-| demo-automatic-cloud-migration.md        | tiansiyuan  | 开始   |            |      |
+| demo-automatic-cloud-migration.md        | tiansiyuan  | 完成   |            |      |
