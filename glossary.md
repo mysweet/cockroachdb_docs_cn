@@ -22,6 +22,8 @@
 - DAG：数据库可用性组(Database Availability Group)；有向无环图(Directed Acyclic Graph)
 - point-lookup：点查找（？）
 - bridge network：桥接网络
+- default：默认
+- topography：地形（？）
 
 =======
 - MVCC：
