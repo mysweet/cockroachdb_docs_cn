@@ -1,22 +1,25 @@
-# 用 CockroachDB 构建一个 Go App
+# 使用 CockroachDB 构建一个 Go App
 
-本节将会向你介绍 CockroachDB 如何使用可兼容的 PostgreSQL 驱动程序或者 ORM 来构建一个简单的 Go App。[Go pq driver](https://godoc.org/github.com/lib/pq) 和 [GORM ORM ](http://jinzhu.me/gorm/)我们已经测试过，觉得推荐给你们使用，所以他们才会出现在这里。
+- 使用 pq 
+- [使用 GORM](build-a-go-app-with-cockroachdb-gorm.md)
 
-## 开始之前
+本教程将向你介绍，如何使用与 PostgreSQL 兼容的驱动程序或者 ORM，用 CockroachDB  构建一个简单的 Go 应用程序。我们已经测试过 [Go pq 驱动程序](https://godoc.org/github.com/lib/pq) 和 [GORM ORM ](http://jinzhu.me/gorm/)，并能推荐给你们使用，所以它们才会出现在这里。
 
-确保你已经 [安装 CockroachDB](install-cockroachdb.html)
+## 准备
 
-## 第一步 安装 Go pq 驱动程序
+确保你已经 [安装了 CockroachDB](install-cockroachdb.md)
 
-使用下面的命令可以安装 Go pq 驱动程序：
+## 第一步：安装 Go pq 驱动程序
+
+使用下面的命令可以[安装 Go pq 驱动程序](https://godoc.org/github.com/lib/pq)：
 
 ```shell
 $ go get -u github.com/lib/pq
 ```
 
-## 第二步 启动一个集群
+## 第二步：启动一个集群
 
-这一步你只需要在非安全模式下运行这个 CockroachDB 命令：
+这一步，你只需要在非安全模式下运行这条 CockroachDB 命令：
 
 ```shell
 $ cockroach start --insecure \
@@ -24,9 +27,9 @@ $ cockroach start --insecure \
 --host=localhost
 ```
 
-但是，正如你看过的 [启动一个本地集群](start-a-local-cluster.html) 教程，如果你想模拟一个真正的集群，那么启动和加入附加代码也是非常容易的。
+但是，正如你看过的 [启动一个本地集群](start-a-local-cluster.md) 教程，如果你想模拟一个真实的集群，那么启动和加入附加代码也是非常容易的。
 
-在新的终端，运行代码：
+在新的终端窗口，启动节点 2：
 
 ```shell
 $ cockroach start --insecure \
@@ -37,7 +40,7 @@ $ cockroach start --insecure \
 --join=localhost:26257
 ```
 
-在新的终端，运行代码：
+在新的终端，启动节点 3：
 
 ```shell
 $ cockroach start --insecure \
@@ -48,37 +51,84 @@ $ cockroach start --insecure \
 --join=localhost:26257
 ```
 
-## 第三步 添加用户
+## 第三步：创建用户
 
-在新的终端，root 用户可以使用  [`cockroach user`](https://www.cockroachlabs.com/docs/stable/create-and-manage-users.html) 命令来添加一个新的用户 `maxroach`：
+在新的终端窗口，`root` 用户可以使用  [`cockroach user`](create-and-manage-users.md) 命令来创建一个新用户 `maxroach`：
 
 ```shell
 $ cockroach user set maxroach --insecure
 ```
 
-## 第四步 创建数据库并授予权限
+## 第四步：创建数据库并授权
 
-root 用户可以使用内置的 SQL 客户端创建一个 `bank` 的数据库：
+`root` 用户可以使用[内建的 SQL 客户端](use-the-built-in-sql-client.md)创建一个 `bank` 的数据库：
 
 ```shell
 $ cockroach sql --insecure -e 'CREATE DATABASE bank'
 ```
 
-然后给 `maxroach` 赋予权限：
+然后给 `maxroach` 用户授权：
 
 ```shell
 $ cockroach sql --insecure -e 'GRANT ALL ON DATABASE bank TO maxroach'
 ```
 
-## 第五步 运行 Go 命令
+## 第五步：运行 Go 代码
 
-现在已经有一个数据库和一个用户，你可以运行代码来创建表并插入行数据，然后也可以把数据当做一个 [原子事务](transactions.html) 来读取和更新。
+现在已经有一个数据库和一个用户，你可以运行代码来创建表并插入一些数据，然后也可以运行代码作为原子[事务](transactions.md) 来读取和更新数据。
 
 ### 基本语句
 
-首先，使用下面的代码可以让你作为 `maxroach` 用户连接数据库并执行一些基本的 SQL 语句来创建表、插入行数据以及读取并输出这些行数据。
+首先，使用下面的代码可以作为 `maxroach` 用户连接数据库并执行一些基本的 SQL 语句来创建表、插入行数据以及读取并打印这些行。
 
-下载 <a href="https://raw.githubusercontent.com/cockroachdb/docs/master/_includes/app/basic-sample.go" download><code>basic-sample.go</code></a> 文件，或者新建一个文件然后将代码复制进去。
+下载 [<code>basic-sample.go</code>](https://raw.githubusercontent.com/cockroachdb/docs/master/_includes/app/basic-sample.go) 文件，或者新建一个文件然后将代码复制进去。
+
+```go
+package main
+
+import (
+    "database/sql"
+    "fmt"
+    "log"
+
+    _ "github.com/lib/pq"
+)
+
+func main() {
+    // Connect to the "bank" database.
+    db, err := sql.Open("postgres", "postgresql://maxroach@localhost:26257/bank?sslmode=disable")
+    if err != nil {
+        log.Fatal("error connecting to the database: ", err)
+    }
+
+    // Create the "accounts" table.
+    if _, err := db.Exec(
+        "CREATE TABLE IF NOT EXISTS accounts (id INT PRIMARY KEY, balance INT)"); err != nil {
+        log.Fatal(err)
+    }
+
+    // Insert two rows into the "accounts" table.
+    if _, err := db.Exec(
+        "INSERT INTO accounts (id, balance) VALUES (1, 1000), (2, 250)"); err != nil {
+        log.Fatal(err)
+    }
+
+    // Print out the balances.
+    rows, err := db.Query("SELECT id, balance FROM accounts")
+    if err != nil {
+        log.Fatal(err)
+    }
+    defer rows.Close()
+    fmt.Println("Initial balances:")
+    for rows.Next() {
+        var id, balance int
+        if err := rows.Scan(&id, &balance); err != nil {
+            log.Fatal(err)
+        }
+        fmt.Printf("%d %d\n", id, balance)
+    }
+}
+```
 
 接着运行代码：
 
@@ -96,11 +146,65 @@ Initial balances:
 
 ### 事务（带有重试逻辑）
 
-其次，使用下面的代码可以让你作为 `maxroach` 用户重连数据库，但是这次将会执行一些可被当做原子事务的语句把基金从一个用户转移到另一个用户，在这里所有包含的语句不是提交就是已经中止。
+下一步，使用下面的代码可以作为 `maxroach` 用户重连数据库，但是这次将会执行一组语句，作为原子事务的语句将资金从一个帐户转移到另一个帐户，在这里所有包含的语句或者被提交或者被退出。
 
-下载 <a href="https://raw.githubusercontent.com/cockroachdb/docs/master/_includes/app/txn-sample.go" download><code>txn-sample.go</code></a> 文件，或者自己新建一个文件然后将代码复制进去。
+下载 [<code>txn-sample.go</code>](https://raw.githubusercontent.com/cockroachdb/docs/master/_includes/app/txn-sample.go) 文件，或者自己新建一个文件然后将代码复制进去。
 
-因为带有默认的可串行化的隔离层，当万一出现读写争用的情况，CockroachDB 可能要求 [客户端重试一个事务](transactions.html#transaction-retries)。CockroachDB 会提供一个通用的 **重试** 函数，它运行在事务里面，必要时候就会重试。对 Go 来说，这个 CockroachDB 重试函数在 CockroachDB 的 Go 客户端的 `crdb` 包里。正如下面所做的， 克隆这个库到你的 `$GOPATH` 里：
+```go
+package main
+
+import (
+    "context"
+    "database/sql"
+    "fmt"
+    "log"
+
+    "github.com/cockroachdb/cockroach-go/crdb"
+)
+
+func transferFunds(tx *sql.Tx, from int, to int, amount int) error {
+    // Read the balance.
+    var fromBalance int
+    if err := tx.QueryRow(
+        "SELECT balance FROM accounts WHERE id = $1", from).Scan(&fromBalance); err != nil {
+        return err
+    }
+
+    if fromBalance < amount {
+        return fmt.Errorf("insufficient funds")
+    }
+
+    // Perform the transfer.
+    if _, err := tx.Exec(
+        "UPDATE accounts SET balance = balance - $1 WHERE id = $2", amount, from); err != nil {
+        return err
+    }
+    if _, err := tx.Exec(
+        "UPDATE accounts SET balance = balance + $1 WHERE id = $2", amount, to); err != nil {
+        return err
+    }
+    return nil
+}
+
+func main() {
+    db, err := sql.Open("postgres", "postgresql://maxroach@localhost:26257/bank?sslmode=disable")
+    if err != nil {
+        log.Fatal("error connecting to the database: ", err)
+    }
+
+    // Run a transfer in a transaction.
+    err = crdb.ExecuteTx(context.Background(), db, nil, func(tx *sql.Tx) error {
+        return transferFunds(tx, 1 /* from acct# */, 2 /* to acct# */, 100 /* amount */)
+    })
+    if err == nil {
+        fmt.Println("Success")
+    } else {
+        log.Fatal("error: ", err)
+    }
+}
+```
+
+因为带有默认的 `SERIALIZABLE` 隔离层，当万一出现读写竞争的情况，CockroachDB 可能要求 [客户端重试一个事务](transactions.md#transaction-retries)。CockroachDB 会提供一个通用的 **重试** 函数，它运行在事务里面，必要时候就会重试。对 Go 来说，这个 CockroachDB 重试函数在 CockroachDB 的 Go 客户端的 `crdb` 包里。正如下面所做的， 克隆这个库到你的 `$GOPATH` 里：
 
 ```shell
 $ mkdir -p $GOPATH/github.com/cockroachdb
@@ -126,7 +230,7 @@ $ go run txn-sample.go
 Success
 ```
 
-然而，如果你想要核实这个已经从一个账户转移到另一个账户的基金，可以使用 [内置 SQL 客户端](use-the-built-in-sql-client.html)：
+然而，如果你想要核实资金已经从一个账户转移到了另一个账户，可以使用 [内建的 SQL 客户端](use-the-built-in-sql-client.md)：
 
 ```shell
 $ cockroach sql --insecure -e 'SELECT id, balance FROM accounts' --database=bank
@@ -142,13 +246,13 @@ $ cockroach sql --insecure -e 'SELECT id, balance FROM accounts' --database=bank
 (2 rows)
 ```
 
-## 下一节
+## 下一步
 
-如果想了解更多，可以使用 [Go pq driver](https://godoc.org/github.com/lib/pq)
+阅读更多关于使用 [Go pq 驱动程序](https://godoc.org/github.com/lib/pq)的资料。
 
-你可能对使用本地集群来探索核心的 CockroachDB 特点很感兴趣：
+你可能对使用本地集群来探索 CockroachDB 的核心功能感兴趣：
 
--   [数据复制](demo-data-replication.html)
--   [容错和恢复](demo-fault-tolerance-and-recovery.html)
--   [自动的再平衡](demo-automatic-rebalancing.html)
--   [自动的云迁移](demo-automatic-cloud-migration.html)
+-   [数据复制](demo-data-replication.md)
+-   [容错和恢复](demo-fault-tolerance-and-recovery.md)
+-   [自动化再平衡](demo-automatic-rebalancing.md)
+-   [自动化云迁移](demo-automatic-cloud-migration.md)
