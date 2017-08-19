@@ -37,7 +37,7 @@
 | build-a-nodejs-app-with-cockroachdb-sequelize.md | tangxiaoji  | 完成   |            |      |
 | build-a-java-app-with-cockroachdb.md     | zhaoyuxin   | 完成   |            |      |
 | build-a-java-app-with-cockroachdb-hibernate.md | tangxiaoji  |      |            |      |
-| demo-data-replication.md                 | DoubleWoodH | 完成   |            |      |
+| demo-data-replication.md                 | DoubleWoodH | 完成   | tiansiyuan | 完成 |
 | demo-fault-tolerance-and-recovery.md     | DoubleWoodH |      |            |      |
 | demo-automatic-rebalancing.md            | tiansiyuan  | 完成   |            |      |
 | demo-automatic-cloud-migration.md        | tiansiyuan  | 完成   |            |      |

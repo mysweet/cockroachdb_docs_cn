@@ -1,12 +1,12 @@
-# 数据复制实例
+# 数据复制
 
-本节将会向你介绍一个 CockroachDB 如何复制及分配数据的简单实例。启动一个单节点本地集群开始，你可以写入一些数据，然后添加2个节点接着就可以查看数据是如何自动复制的。然后你可以通过复制下面前5个步骤，再加上另外两个节点，接着再次查看已经存在的所有复制品是如何复制出新的节点的。
+本页将向你介绍 CockroachDB 如何复制及分配数据的一个简单实例。首先，启动一个单节点本地集群，写入一些数据，添加两个节点，观察数据是如何自动复制的。然后，更新集群让它复制 5 次，添加另外两个节点，并再次观察所有已经存在的复本是如何到新节点的。
 
-## 开始之前
+## 准备
 
-确保你已经 [安装 CockroachDB](install-cockroachdb.html).
+确保你已经 [安装了 CockroachDB](install-cockroachdb.md)。
 
-## 步骤1 启动一个单节点集群
+## 第一步：启动一个单节点集群
 
 ```shell
 $ cockroach start --insecure \
@@ -14,9 +14,9 @@ $ cockroach start --insecure \
 --host=localhost
 ```
 
-## 步骤2 写入数据
+## 第二步：写入数据
 
-开启一个新的终端，使用 [`cockroach gen`](generate-cockroachdb-resources.html) 命令来生成一个 `intro` 的示例数据库：
+在一个新的终端窗口中，使用 [`cockroach gen`](generate-cockroachdb-resources.md) 命令生成一个例子数据库 `intro`：
 
 ```shell
 $ cockroach gen example-data intro | cockroach sql --insecure
@@ -34,7 +34,7 @@ INSERT 1
 ...
 ```
 
-在同一个终端，打开 [内置的 SQL 命令行](use-the-built-in-sql-client.html) 核实新的 `intro` 数据库是否已经创建并新建了一个表 `mytable`：
+在同一个终端窗口中，打开 [内建的 SQL shell](use-the-built-in-sql-client.md)，核实新的数据库 `intro` 已经创建并有一个表 `mytable`：
 
 ```shell
 $ cockroach sql --insecure
@@ -108,15 +108,15 @@ $ cockroach sql --insecure
 (21 rows)
 ```
 
-然后推迟 SQL 命令行：
+然后退出 SQL shell：
 
 ```sql
 > \q
 ```
 
-## 步骤3 添加两个节点
+## 第三步：添加两个节点
 
-在一个新的终端，添加节点2：
+在一个新的终端窗口中，添加节点 2：
 
 ```shell
 $ cockroach start --insecure \
@@ -127,7 +127,7 @@ $ cockroach start --insecure \
 --join=localhost:26257
 ```
 
-在另一个新的终端，添加节点3：
+在一个新的终端窗口中，添加节点 3：
 
 ```shell
 $ cockroach start --insecure \
@@ -138,15 +138,15 @@ $ cockroach start --insecure \
 --join=localhost:26257
 ```
 
-## 步骤4 查看数据是否被复制到新的节点
+## 第四步：观察数据被复制到新节点
 
-打开管理界面 `http://localhost:8080`，在右侧点击 **View nodes list** ，你将会看到列表中有3个节点。一开始，副品计数将会少于节点2和节点3。很快，副品计数在所有3个节点上都是相同的，意味着集群中的所有数据已经被复制了3次，每个节点中都有每一条数据的副品。
+打开 Admin UI `http://localhost:8080`，点击右侧的 **View nodes list** ，你将看到列表中有 3 个节点。一开始，节点 2 和 3 的副本数量较低。很快，副本数量在所有 3 个节点上都是相同的，意味着集群中的所有数据已经被复制了 3 次，每个节点中都有每条数据的一份拷贝。
 
-![replication1](images/replication1.png)
+![replication1](../images/replication1.png)
 
-##步骤5 增加复制因数
+## 第五步：增大复制因子
 
-正如你看到的，CockroachDB 默认复制3次数据。现在，在内置 SQL 命令行或者在一个新的终端，编辑默认的 [replication zone](configure-replication-zones.html) 可以复制5次数据：
+正如你看到的，CockroachDB 默认复制 3 次数据。现在，在内建 SQL shell 或者在一个新的终端窗口中，编辑默认的[复制区](configure-replication-zones.html) 以复制 5 次数据：
 
 ```shell
 $ echo 'num_replicas: 5' | cockroach zone set .default --insecure -f -
@@ -161,9 +161,9 @@ num_replicas: 5
 constraints: []
 ```
 
-## 步骤6 添加另外两个节点
+## 第六步：添加另外两个节点
 
-在一个新的终端，添加节点4：
+在一个新的终端窗口中，添加节点 4：
 
 ```shell
 $ cockroach start --insecure \
@@ -174,7 +174,7 @@ $ cockroach start --insecure \
 --join=localhost:26257
 ```
 
-在另一个新的节点，添加节点5：
+在一个新的终端窗口中，添加节点 5：
 
 ```shell
 $ cockroach start --insecure \
@@ -185,29 +185,31 @@ $ cockroach start --insecure \
 --join=localhost:26257
 ```
 
-## 步骤7 查看数据是否被复制到新的节点
+## 第七步：观察数据被复制到新节点
 
-进入管理界面，你将会看到列表中有5个节点。同样的，一开始，副品计数将少于节点4和节点5。但是因为你将默认的复制因数改成了5，很快，副品计数在所有5个节点上都是相同的，意味着集群中的所有数据已经被复制了3次.
+回到 Admin UI，你将会看到列表中有 5 个节点。同样的，一开始，节点 4 和 5 的副本数量较少。但是因为你将默认的复制因子改为了 5，很快，在所有 5 个节点上的副本数量都是相同的，意味着集群中的所有数据已经被复制了 5 次。
 
-![replication2](images/replication2.png)
+![replication2](../images/replication2.png)
 
-## 步骤8 关闭集群
+## 第八步：关闭集群
 
-在完成测试集群后，通过切换到每个节点本身的终端并使用 **CTRL + C** 来关闭每一个节点。
+一旦使用完测试集群后，通过切换到每个节点的终端窗口并按 **CTRL + C** 键来关闭每一个节点。
 
-对于最后两个节点，关闭进程将会需要更长时间（大概1分钟），最终会强制杀死所有节点。这是因为，如果只留2个节点仍然在线，大多数副品就不再可使用（3 / 5），接着导致集群不能操作。为了加快关闭进程，可在节点终端长按 **CTRL + C** 1秒。
+> 注：
+>
+> 对于最后两个节点，关机过程将会需要更长时间（大概一分钟），最终会强制杀死所有节点。这是因为，如果只留 2 个节点仍然在线，大多数副本（3/5）不再可用，导致集群不能运行。为了加快关闭过程，可在节点终端窗口中第二次按 **CTRL + C** 键。
 
-如果你不再计划重新启动这个集群，你可能想要删除节点中的数据缓存：
+如果你不打算重新启动这个集群，你可能想要删除节点的数据存储：
 
 ```shell
 $ rm -rf repdemo-node1 repdemo-node2 repdemo-node3 repdemo-node4 repdemo-node5
 ```
 
-## 下一节
+## 下一步
 
-使用一个本地集群来探索其他的 CockroachDB 核心功能：
+使用一个本地集群探索 CockroachDB 的其他核心功能：
 
--   [容错和恢复](demo-fault-tolerance-and-recovery.html)
--   [自动再平衡](demo-automatic-rebalancing.html)
--   [自动云迁移](demo-automatic-cloud-migration.html)
+-   [容错和恢复](demo-fault-tolerance-and-recovery.md)
+-   [自动再平衡](demo-automatic-rebalancing.md)
+-   [自动云迁移](demo-automatic-cloud-migration.md)
 
