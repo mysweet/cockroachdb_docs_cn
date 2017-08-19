@@ -6,13 +6,13 @@
 | ---------------------------------------- | ----------- | ---- | ---------- | ---- |
 | **FAQs**                                 | ===         | ===  | ===        | ===  |
 | frequently-asked-questions.md            |             |      |            |      |
-| sql-faqs.md                              |             |      |            |      |
+| sql-faqs.md                              | DoubleWoodH |      |            |      |
 | operational-faqs.md                      |             |      |            |      |
 | cockroachdb-in-comparison.md             |             |      |            |      |
 | cockroachdb-architecture.md              |             |      |            |      |
 | simplified-deployment.md                 |             |      |            |      |
 | strong-consistency.md                    |             |      |            |      |
-| sql.md                                   |             |      |            |      |
+| sql.md                                   | DoubleWoodH |      |            |      |
 | distributed-transactions.md              |             |      |            |      |
 | automated-scaling-and-repair.md          |             |      |            |      |
 | high-availability.md                     |             |      |            |      |
