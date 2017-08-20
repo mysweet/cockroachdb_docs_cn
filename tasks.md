@@ -5,7 +5,7 @@
 | 文件名                                      | 翻译          | 状态   | 审稿         | 状态   |
 | ---------------------------------------- | ----------- | ---- | ---------- | ---- |
 | **FAQs**                                 | ===         | ===  | ===        | ===  |
-| frequently-asked-questions.md            |             |      |            |      |
+| frequently-asked-questions.md            | tiansiyuan  | 开始   |            |      |
 | sql-faqs.md                              | DoubleWoodH |      |            |      |
 | operational-faqs.md                      |             |      |            |      |
 | cockroachdb-in-comparison.md             |             |      |            |      |
@@ -18,7 +18,7 @@
 | high-availability.md                     |             |      |            |      |
 | open-source.md                           |             |      |            |      |
 | go-implementation.md                     |             |      |            |      |
-| known-limitations.md                     |             |      |            |      |
+| known-limitations.md                     | tiansiyuan  | 开始   |            |      |
 | **设计**                                   | ===         | ===  | ===        | ===  |
 | design.md                                | tiansiyuan  | 完成   |            |      |
 | **入门**                                   | ===         | ===  | ===        | ===  |
