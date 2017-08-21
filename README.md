@@ -2,9 +2,9 @@
 
 ### 文件说明
 
-- `v1.0/` 目录里的文件和 `design.md` 是原文。
+- `v1.0/` 和 `releases/` 目录里的文件和 `design.md` 是原文。
 
-  * `v1.0/` 目录的内容来自[Github repo](https://github.com/cockroachdb/docs.git)，用于生成[官网的 docs](https://www.cockroachlabs.com/docs/stable/)，是用户手册。格式较为复杂，嵌有 HTML 和 JavaScript。
+  * `v1.0/` 和 `releases/` 目录的内容来自[Github repo](https://github.com/cockroachdb/docs.git)，用于生成[官网的 docs](https://www.cockroachlabs.com/docs/stable/)，是用户手册。格式较为复杂，嵌有 HTML 和 JavaScript。
 
   * `design.md` 是设计文档，是简单的 Markdown 格式。
   
@@ -14,7 +14,7 @@
 
 - 中文译文
 
-  * 放在 `v1.0\_cn/` 目录下（文件名不变）和 `design\_cn.md` 中。
+  * 相应放在 `v1.0\_cn/` 和 `releases/` 目录下（文件名不变）和 `design\_cn.md` 中。
   
   * `v1.0\_cn/images/` 目录存在上层的 `images` 目录中没有的图片文件，可以从[官网的 docs](https://www.cockroachlabs.com/docs/stable/) 页面截屏获得。
    
