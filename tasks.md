@@ -19,17 +19,17 @@
 | open-source.md                           |             |      |            |      |
 | go-implementation.md                     |             |      |            |      |
 | known-limitations.md                     | tiansiyuan  | 开始   |            |      |
-| **版本**                                  | ===         | ===  | ===        | ===  |
-| v1.0.4.md                                |           |    |          |   |
-| v1.0.3.md                                |           |    |          |   |
-| v1.0.2.md                                |           |    |          |   |
-| v1.0.1.md                                |           |    |          |   |
-| v1.0.md                                  |           |    |          |   |
-| **设计**                                  | ===         | ===  | ===        | ===  |
+| **版本**                                   | ===         | ===  | ===        | ===  |
+| v1.0.4.md                                |             |      |            |      |
+| v1.0.3.md                                |             |      |            |      |
+| v1.0.2.md                                |             |      |            |      |
+| v1.0.1.md                                |             |      |            |      |
+| v1.0.md                                  |             |      |            |      |
+| **设计**                                   | ===         | ===  | ===        | ===  |
 | design.md                                | tiansiyuan  | 完成   |            |      |
-| **入门**                                  | ===         | ===  | ===        | ===  |
+| **入门**                                   | ===         | ===  | ===        | ===  |
 | install-cockroachdb.md                   | tangxiaoji  | 完成   | tiansiyuan | 完成   |
-| start-a-local-cluster.md                 | tangxiaoji  | 完成   |            |      |
+| start-a-local-cluster.md                 | tangxiaoji  | 完成   | tiansiyuan | 完成   |
 | secure-a-cluster.md                      | jiachenhui  | 完成   |            |      |
 | start-a-local-cluster-in-docker.md       | jiachenhui  | 完成   | tiansiyuan | 完成   |
 | learn-cockroachdb-sql.md                 | DoubleWoodH | 完成   | tiansiyuan | 完成   |
@@ -47,11 +47,11 @@
 | demo-fault-tolerance-and-recovery.md     | DoubleWoodH | 完成   | tiansiyuan | 完成   |
 | demo-automatic-rebalancing.md            | tiansiyuan  | 完成   |            |      |
 | demo-automatic-cloud-migration.md        | tiansiyuan  | 完成   |            |      |
-| **开发**                                  | ===         | ===  | ===        | ===  |
+| **开发**                                   | ===         | ===  | ===        | ===  |
 | add-column.md                            | tangxiaoji  | 完成   |            |      |
 | add-constraint.md                        | Wbofeng     | 完成   |            |      |
 | alter-column.md                          | jiachenhui  |      |            |      |
-| **部署**                                  | ===         | ===  | ===        | ===  |
-| **管理**                                  | ===         | ===  | ===        | ===  |
-| **排错**                                  | ===         | ===  | ===        | ===  |
-| **贡献**                                  | ===         | ===  | ===        | ===  |
+| **部署**                                   | ===         | ===  | ===        | ===  |
+| **管理**                                   | ===         | ===  | ===        | ===  |
+| **排错**                                   | ===         | ===  | ===        | ===  |
+| **贡献**                                   | ===         | ===  | ===        | ===  |
