@@ -41,7 +41,7 @@
 | build-a-python-app-with-cockroachdb-sqlalchemy.md | zhaoyuxin   |      |            |      |
 | build-a-nodejs-app-with-cockroachdb.md   | zhaoyuxin   | 完成   | tangxiaoji |      |
 | build-a-nodejs-app-with-cockroachdb-sequelize.md | tangxiaoji  | 完成   |            |      |
-| build-a-java-app-with-cockroachdb.md     | zhaoyuxin   | 完成   |            |      |
+| build-a-java-app-with-cockroachdb.md     | zhaoyuxin   | 完成   | tiansiyuan | 完成   |
 | build-a-java-app-with-cockroachdb-hibernate.md | tangxiaoji  |      |            |      |
 | demo-data-replication.md                 | DoubleWoodH | 完成   | tiansiyuan | 完成   |
 | demo-fault-tolerance-and-recovery.md     | DoubleWoodH | 完成   | tiansiyuan | 完成   |
