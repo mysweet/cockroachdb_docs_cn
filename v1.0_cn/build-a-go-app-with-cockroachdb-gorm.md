@@ -1,22 +1,29 @@
-# 使用 GORM 库构建 GO 语言的 CockroachDB 应用程序
+# 使用 CockroachDB 构建一个 Go App
 
-这一节主要讲述如何使用 GORM 构建一个 CockroachDB 应用。
+- [使用 pq](build-a-go-app-with-cockroachdb.md) 
+- 使用 GORM
 
-## 开始之前
+本教程将向你介绍，如何使用与 PostgreSQL 兼容的驱动程序或者 ORM，用 CockroachDB  构建一个简单的 Go 应用程序。我们已经测试过 [Go pq 驱动程序](https://godoc.org/github.com/lib/pq) 和 [GORM ORM ](http://jinzhu.me/gorm/)，并能推荐给你们使用，所以它们才会出现在这里。
 
-确定你已经安装了 [CockroachDB](https://www.cockroachlabs.com/docs/stable/install-cockroachdb.html).
+> **提示：**
+> 
+> 对于更实际的 GORM 和 CockroachDB 使用，见 [examples-orms](https://github.com/cockroachdb/examples-orms) 代码库。
+
+## 准备
+
+确定你已经[安装了 CockroachDB](install-cockroachdb.md)。
 
 ## 第一步：安装 GORM ORM
 
-运行一下程序安装 [GORM](http://jinzhu.me/gorm/)
+运行以下命令安装 [GORM](http://jinzhu.me/gorm/)：
 
 ~~~ shell
 $ go get -u github.com/jinzhu/gorm
 ~~~
 
-## 第二步：部署一个集群
+## 第二步：启动一个集群
 
-只需要一个在非安全模式下的节点就能完成此次测试
+本教程只需要一个在运行在非安全模式下的 CockroachDB 节点。
 
 ```sh
 $ cockroach start --insecure \
@@ -24,9 +31,9 @@ $ cockroach start --insecure \
 --host=localhost
 ```
 
-如果你需要模拟一个真正的集群，可以查看[部署一个集群](https://www.cockroachlabs.com/docs/stable/start-a-local-cluster.html)
+如果需要模拟一个真正的集群，可以查看[启动一个本地集群](start-a-local-cluster.md)教程，启动和加入另外的节点非常容易。
 
-再打开一个终端，开启节点2：
+打开一个新的终端窗口，启动节点 2：
 
 ```sh
 cockroach start --insecure \
@@ -37,7 +44,7 @@ cockroach start --insecure \
 --join=localhost:26257
 ```
 
-再打开一个终端，开启节点3：
+再打开一个新的终端窗口，启动节点 3：
 
 ```sh
 cockroach start --insecure \
@@ -50,31 +57,31 @@ cockroach start --insecure \
 
 ## 第三步：创建一个用户
 
-打开一个新终端，以 root 用户身份使用 [cockroach user](https://www.cockroachlabs.com/docs/stable/create-and-manage-users.html) 命令来创建一个新用户 `maxroach` ：
+打开一个新的终端窗口，以 `root` 用户身份使用 [cockroach user](create-and-manage-users.md) 命令创建一个新用户 `maxroach`。
 
 ```sh
 cockroach user set maxroach --insecure
 ```
 
-## 第四步：创建数据库并授予权限
+## 第四步：创建数据库并授权
 
-以 root 用户使用 [内置 SQL 客户端](https://www.cockroachlabs.com/docs/stable/use-the-built-in-sql-client.html)创建 `bank` 数据库：
+以 `root` 用户使用 [内建 SQL 客户端](use-the-built-in-sql-client.md)创建 `bank` 数据库。
 
 ```sh
 cockroach sql --insecure -e 'CREATE DATABASE bank'
 ```
 
-接下来为 `maxroach` 用户[授予权限](https://www.cockroachlabs.com/docs/stable/grant.html)：
+接下来为 `maxroach` 用户[授权](grant.html)。
 
 ```sh
 cockroach sql --insecure -e 'GRANT ALL ON DATABASE bank TO maxroach'
 ```
 
-## 第五步：运行 GO 程序
+## 第五步：运行 GO 代码
 
-一下代码使用 [GORM](http://jinzhu.me/gorm/) ORM 来进行 SQL 操作。比如，`db.AutoMigrate(&Account{})` 基于账户模板创建了一个 `accounts` 表， `db.Create(&Account{})` 向这个表中插入了一列，`db.Find(&accounts)` 检索数据并输出。
+以下代码使用 [GORM](http://jinzhu.me/gorm/) ORM 将特定于 Go 的对象映射为 SQL 操作。比如，`db.AutoMigrate(&Account{})` 基于 Account 模型创建了一张 `accounts` 表， `db.Create(&Account{})` 向这个表中插入了几行，`db.Find(&accounts)` 检索数据并输出余额。
 
-复制以下代码或[直接复制](https://raw.githubusercontent.com/cockroachdb/docs/master/_includes/app/gorm-basic-sample.go)。
+复制以下代码或[直接下载](https://raw.githubusercontent.com/cockroachdb/docs/master/_includes/app/gorm-basic-sample.go)。
 
 ~~~ go
 package main
@@ -120,12 +127,12 @@ func main() {
 }
 ~~~
 
-y运行以下代码：
+然后运行代码：
 ~~~ shell
 $ go run gorm-basic-sample.go
 ~~~
 
-输出结果：
+输出应该是：
 
 ~~~ shell
 Initial balances:
@@ -133,7 +140,7 @@ Initial balances:
 2 250
 ~~~
 
-可以使用[内置 SQL 客户端](https://www.cockroachlabs.com/docs/stable/use-the-built-in-sql-client.html)核实数据库表和数据是否被成功创建：
+可以使用[内建 SQL 客户端](use-the-built-in-sql-client.html)验证数据库表和行被成功创建：
 
 ~~~ shell
 $ cockroach sql --insecure -e 'SHOW TABLES' --database=bank
@@ -164,11 +171,11 @@ $ cockroach sql --insecure -e 'SELECT id, balance FROM accounts' --database=bank
 
 ## 下一步：
 
-阅读 [GORM ORM](http://jinzhu.me/gorm/) 使用说明并在 [examples-orms](https://github.com/cockroachdb/examples-orms) 库里尝试更多实现。
+阅读 [GORM ORM](http://jinzhu.me/gorm/) 使用说明并在 [examples-orms](https://github.com/cockroachdb/examples-orms) 库里尝试更多真实的 CockroachDB GORM 实现。
 
-你也许更感兴趣于使用一个本地集群来探索更多 CockroachDB 的核心特性：
+你也许有兴趣于使用一个本地集群探索下面的 CockroachDB 的核心功能：
 
-- [数据自我复制](https://www.cockroachlabs.com/docs/stable/demo-data-replication.html)
-- [容错和恢复](https://www.cockroachlabs.com/docs/stable/demo-fault-tolerance-and-recovery.html)
-- [自动再平衡](https://www.cockroachlabs.com/docs/stable/demo-automatic-rebalancing.html)
-- [自动云迁移](https://www.cockroachlabs.com/docs/stable/demo-automatic-cloud-migration.html)
+- [数据复制](demo-data-replication.md)
+- [容错和恢复](demo-fault-tolerance-and-recovery.md)
+- [自动再平衡](demo-automatic-rebalancing.md)
+- [自动云迁移](demo-automatic-cloud-migration.md)
