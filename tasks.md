@@ -30,7 +30,7 @@
 | **入门**                                   | ===         | ===  | ===        | ===  |
 | install-cockroachdb.md                   | tangxiaoji  | 完成   | tiansiyuan | 完成   |
 | start-a-local-cluster.md                 | tangxiaoji  | 完成   | tiansiyuan | 完成   |
-| secure-a-cluster.md                      | jiachenhui  | 完成   |            |      |
+| secure-a-cluster.md                      | jiachenhui  | 完成   | tiansiyuan | 完成   |
 | start-a-local-cluster-in-docker.md       | jiachenhui  | 完成   | tiansiyuan | 完成   |
 | learn-cockroachdb-sql.md                 | DoubleWoodH | 完成   | tiansiyuan | 完成   |
 | use-the-built-in-sql-client.md           | tangxiaoji  | 完成   |            |      |
