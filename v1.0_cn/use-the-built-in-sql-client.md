@@ -1,15 +1,15 @@
-# 使用内置的 SQL 客户端
+# 使用内建的 SQL 客户端
 
-CockroachDB 内置了一个客户端用来在交互式的 shell 或在命令行中直接运行 SQL 语句。
+CockroachDB 内建了一个客户端用，在交互式的 shell 或直接在命令行中运行 SQL 语句。
 
-下面介绍了怎样通过 Cockroach SQL [命令](https://www.cockroachlabs.com/docs/stable/cockroach-commands.html)来使用这个客户端。
+下面介绍了运行 Cockroach SQL [命令](cockroach-commands.md)来使用这个客户端。
 
-最后需要退出时，按 **CTRL + D**, **CTRL + C**, 或 `\q`。
+要退出交互式的 shell，按 **CTRL + D**, **CTRL + C**, 或 `\q`。
 
 ## 简介
 
 ~~~ shell
-# 运行交互式的 SQL 终端:
+# 运行交互式的 SQL shell:
 $ cockroach sql <flags>
 
 # 从命令行运行 SQL:
@@ -21,64 +21,65 @@ $ cockroach sql <flags> < file-containing-statements.sql
 $ cockroach sql --help
 ~~~
 
-## 指令
+## 标志
 
-`sql` 命令支持 [普通用法](#普通用法) 和 [日志](#日志) 指令.
+`sql` 命令支持 [普通用法](#通用) 和 [日志](#日志) 标志。
 
-### 普通用法
+### 通用
 
-- 打开一个交互式的 SQL 终端，带上适当的命令标识运行 `cockroach sql` 命令或直接使用 `--url` 标识输出命令使用的细节。
-- 在命令行中使用 `--execute` 运行 SQL 语句。
+- 打开一个交互式的 SQL shell，带上适当的命令标志运行 `cockroach sql` 命令或仅使用 `--url` 标志，它将包含连接的细节。
 
-| 命令行标识                | 描述                                       |
+- 在命令行用 `--execute` 标志运行 SQL 语句。
+
+| 标志                | 描述                                       |
 | :------------------- | ---------------------------------------- |
-| `--certs-dir`        | [证书所在的目录](https://www.cockroachlabs.com/docs/stable/create-security-certificates.html)。如果在安全模式，这个目录必须包含有效的安全证书。<br><br>**环境变量：** `COCKROACH_CERTS_DIR`<br>**默认值：** `${HOME}/.cockroach-certs/` |
+| `--certs-dir`        | [证书目录](create-security-certificates.md)所在的路径。如果以安全模式运行，这个目录必须包含有效的证书。<br><br>**环境变量：** `COCKROACH_CERTS_DIR`<br>**默认值：** `${HOME}/.cockroach-certs/` |
 | `--database`<br>`-d` | 需要连接的数据库。<br><br>**环境变量：** `COCKROACH_DATABASE` |
-| `--execute`<br>`-e`  | 不打开终端，直接在命令行运行 SQL 语句。这个标识可以使用多次，每一个实例都可以包含一条或多条语句并且用分好隔开。任何一个语句发生错误时，命令将退出并输出一个非零的状态码，其他命令也不再执行。命令执行的结果将在标准输出设备上输出 (查看 `--pretty` 格式化选项)。<br><br>更多示例请看[例子](https://www.cockroachlabs.com/docs/stable/use-the-built-in-sql-client.html#execute-sql-statements-from-the-command-line) 。 |
-| `--host`             | 连接的服务器主机。这可以是集群里任何一个节点的地址。<br><br>**环境变量：** `COCKROACH_HOST`<br>**默认值：** `localhost` |
-| `--insecure`         | 在非安全模式下运行。如果没有设置这个标识，`--certs-dir` 必须指向有效的证书。<br><br>**环境变量：** `COCKROACH_INSECURE`<br>**默认值：** `false` |
-| `--port`<br>`-p`     | 连接的服务端口。<br><br>**环境变量：** `COCKROACH_PORT`<br>**默认值：** `26257` |
-| `--pretty`           | 使用 ASCII 编码格式打印到标准输出的表格行，并禁用特殊字符的转义。<br><br>当使用 `--pretty=false` 来禁用这个功能或当标准输出不是一个终端时，表格将以制表符分隔的方式输出，特殊字符将被忽略。这样有利于输出内容被其他程序解析。<br><br>当输出设备是终端时**默认值：** `true` 否则为`false`。 |
-| `--url`              | 连接的 URL。 如果使用了这个标识，就不要再设置其他的连接标识符。<br><br>对于不安全的连接，URL 的格式是这样的：<br>`--url=postgresql://<user>@<host>:<port>/<database>?sslmode=disable`<br><br>对于安全安全模式下的连接，URL 的格式是这样的：<br>`--url=postgresql://<user>@<host>:<port>/<database>`<br>在查询语句中带上如下的参数：<br>`sslcert=<path-to-client-crt>`<br>`sslkey=<path-to-client-key>`<br>`sslmode=verify-full`<br>`sslrootcert=<path-to-ca-crt>` <br><br>**环境变量：** `COCKROACH_URL` |
-| `--user`<br>`-u`     | 连接的[用户](https://www.cockroachlabs.com/docs/stable/create-and-manage-users.html)。用户必须有操作的[权限](https://www.cockroachlabs.com/docs/stable/privileges.html)。<br><br>**环境变量：** `COCKROACH_USER`<br>**默认值：** `root` |
+| `--execute`<br>`-e`  | 不打开 shell，直接在命令行运行 SQL 语句。这个标志可以使用多次，每一个实例都可以包含一条或多条语句并且用分号隔开。任何一条语句发生错误时，命令将退出并输出一个非零的状态码，其他命令不再执行。命令执行的结果将在标准输出设备上输出 (查看 `--pretty` 格式化选项)。<br><br>更多示例请看[例子](use-the-built-in-sql-client.md#execute-sql-statements-from-the-command-line) 。 |
+| `--host`             | 连接的服务器主机，可以是集群里任何一个节点的地址。<br><br>**环境变量：** `COCKROACH_HOST`<br>**默认值：** `localhost` |
+| `--insecure`         | 以非安全模式运行。如果没有设置这个标志，`--certs-dir` 必须指向有效的证书。<br><br>**环境变量：** `COCKROACH_INSECURE`<br>**默认值：** `false` |
+| `--port`<br>`-p`     | 连接的服务器端口。<br><br>**环境变量：** `COCKROACH_PORT`<br>**默认值：** `26257` |
+| `--pretty`           | 使用 ASCII 艺术将打印到标准输出的表行格式化，并禁用特殊字符的转义。<br><br>当使用 `--pretty=false` 来禁用这个功能或当标准输出不是终端时，表行将以制表符分隔的值输出，特殊字符被转义。这样易于输出内容被其他程序解析。<br><br>**默认值：** 当输出设备是终端时为 `true` 否则为 `false`。 |
+| `--url`              | 连接的 URL。 如果使用了这个标志，就不要再设置其他的连接标识符。<br><br>对于不安全的连接，URL 的格式是这样的：<br>`--url=postgresql://<user>@<host>:<port>/<database>?sslmode=disable`<br><br>对于安全安全模式下的连接，URL 的格式是：<br>`--url=postgresql://<user>@<host>:<port>/<database>`<br>在查询语句中带上如下的参数：<br>`sslcert=<path-to-client-crt>`<br>`sslkey=<path-to-client-key>`<br>`sslmode=verify-full`<br>`sslrootcert=<path-to-ca-crt>` <br><br>**环境变量：** `COCKROACH_URL` |
+| `--user`<br>`-u`     | 连接的[用户](create-and-manage-users.md)。用户必须有操作的[权限](privileges.md)。<br><br>**环境变量：** `COCKROACH_USER`<br>**默认值：** `root` |
 
 ### 日志
 
 默认情况下， `sql` 命令记录错误日志到 `stderr`。
 
-If you need to troubleshoot this command's behavior, you can change its [logging behavior](debug-and-error-logs.html).
+如果你需要对这条命令的行为拍错，可以改变其[日志](debug-and-error-logs.md)。
 
 ## SQL 终端命令
 
-下面的命令可以用来与 SQL 终端交互：
+下面的命令可以在交互式 SQL shell 中使用：
 
 | 命令                                   | 用法                                       |
 | ------------------------------------ | ---------------------------------------- |
 | `\q`<br>**CTRL + D**<br>**CTRL + C** | 退出 shell。                                |
-| `\!`                                 | 运行外部的命令并且将结果输出到 `stdout`。查看[例子](#在 SQL 终端运行外部命令)。 |
-| `\|`                                 | 将外部命令的输出作为 SQL 语句的参数。查看[例子](#在 SQL 终端运行外部命令)。 |
-| `\set <option>`                      | 设置一个客户端参数可用。具体查看下面的参数列表。<br><br>使用不带参数的 `\set` 查看最新的设置。 |
-| `\unset <option>`                    | 禁用客户端参数。具体查看下面的参数列表。                     |
-| `\?`<br>`help`                       | 查看帮助。                                    |
+| `\!`                                 | 运行外部命令并且将结果输出到 `stdout`。查看下面的[例子](#在 SQL shell 中运行外部命令)。 |
+| `\|`                                 | 将外部命令的输出作为 SQL 语句的参数。查看[例子](#在 SQL shell 中运行外部命令)。 |
+| `\set <option>`                      | 设置一个客户端选项可用。具体查看下面的参数列表。<br><br>使用不带参数的 `\set` 查看最新的设置。 |
+| `\unset <option>`                    | 禁用客户端选项。具体查看下面的参数列表。                     |
+| `\?`<br>`help`                       | 在 shell 中查看帮助。                                    |
 
-| 客户端参数               | 描述                                       |
+| 客户端选项            | 描述                                       |
 | ------------------- | ---------------------------------------- |
-| `CHECK_SYNTAX`      | SQL 语句发送到服务器之前在客户端进行语法验证，这保证了用户输入的错字或错误不在交互时出现。<br><br>这个参数默认是可用的，要禁止它，运行 `\unset CHECK_SYNTAX`。 |
-| `NORMALIZE_HISTORY` | 在 shell 历史中存储规范化语法，例如大写关键字、标准化间距、以及将多行语句作为单行语句进行会看。<br><br>这个参数默认是可用的。但是在 `CHECK_SYNTAX` 可用时才可用。需要禁止这个参数，运行 `\unset NORMALIZE_HISTORY`。 |
-| `ERREXIT`           | z在遇到错误时退出 SQL 终端。<br><br>这个命令默认是不可用的。运行 `\set ERREXIT`开启。 |
+| `CHECK_SYNTAX`      | SQL 语句发送到服务器之前在客户端进行语法验证，这保证了用户输入的错字或错误不会退出在交互 shell 中之前启动而且正在运行的事务。<br><br>这个选项默认是打开的，要关闭它，运行 `\unset CHECK_SYNTAX`。 |
+| `NORMALIZE_HISTORY` | 在 shell 历史中存储规范化的语法，例如大写关键字、标准化间距、以及将多行语句作为单行语句再调用。<br><br>这个参数默认是打开的。但是在 `CHECK_SYNTAX` 打开时才打开。要禁用这个选项，运行 `\unset NORMALIZE_HISTORY`。 |
+| `ERREXIT`           | 在遇到错误时退出 SQL shell。<br><br>这个命令默认是关闭。运行 `\set ERREXIT`开启。 |
 
-## SQL 终端快捷方式
+## SQL shell 快捷方式
 
-SQL 终端支持很多快捷方式，比如 **CTRL + R** 搜索历史。更多细节查看[快捷方式](https://github.com/chzyer/readline/blob/master/doc/shortcut.md)。
+SQL shell 支持很多快捷方式，比如 **CTRL + R** 搜索历史。更多细节查看[快捷方式](https://github.com/chzyer/readline/blob/master/doc/shortcut.md)。
 
 ## 例子
 
-### 开启 SQL 终端
+### 启动 SQL shell
 
-在这个例子中，我们将在安全模式下链接终端。
+在下面的例子中，我们将连接 SQL shell 到一个安全集群。
 
 ~~~ shell
-# 使用标准连接方式：
+# 使用标准连接标志：
 $ cockroach sql \
 --certs-dir=certs \
 --user=maxroach \
@@ -86,30 +87,29 @@ $ cockroach sql \
 --port=26257 \
 --database=critterdb
 
-# 使用 --url 标识连接:
+# 使用 --url 标志连接:
 $ cockroach sql \
 --url="postgresql://maxroach@12.345.67.89:26257/critterdb?sslcert=certs/client.maxroach.crt&sslkey=certs/client.maxroach.key&sslmode=verify-full&sslroot=certs/ca.crt"
 ~~~
 
-z在这个例子中，我们将在非安全模式下链接终端：
-
+在下面的例子中，我们将连接 SQL shell 到一个安全集群。
 
 ~~~ shell
-# 使用标准链接方式：
+# 使用标准连接标志：
 $ cockroach sql --insecure \
 --user=maxroach \
 --host=12.345.67.89 \
 --port=26257 \
 --database=critterdb
 
-# 使用 --url 标识连接:
+# 使用 --url 标志连接:
 $ cockroach sql \
 --url="postgresql://maxroach@12.345.67.89:26257/critterdb?sslmode=disable"
 ~~~
 
-### 用 SQL 终端运行 SQL 语句
+### 在 SQL shell 中运行外部命令
 
-这个例子假设我们已经打开了一个 SQL 终端：
+这个例子假设我们已经启动了一个 SQL shell（见上面的例子）。
 
 ~~~ sql
 > CREATE TABLE animals (id SERIAL PRIMARY KEY, name STRING);
@@ -128,12 +128,12 @@ $ cockroach sql \
 +--------------------+----------+
 ~~~
 
-### 在命令行里运行 SQL 语句：
+### 在命令行运行 SQL 语句
 
-在这个例子中，我们在命令行里使用 `--execute` 标识来运行参数。
+在这些例子中，我们在命令行里使用 `--execute` 标志运行来自命令行的语句。
 
 ~~~ shell
-# 只有一个 --execute 标识:
+# 只有一个 --execute 标志:
 $ cockroach sql --insecure \
 --execute="CREATE TABLE roaches (name STRING, country STRING); INSERT INTO roaches VALUES ('American Cockroach', 'United States'), ('Brownbanded Cockroach', 'United States')" \
 --user=maxroach \
@@ -148,7 +148,7 @@ INSERT 2
 ~~~
 
 ~~~ shell
-# 带有多个 --execute 标识:
+# 带有多个 --execute 标志:
 $ cockroach sql --insecure \
 --execute="CREATE TABLE roaches (name STRING, country STRING)" \
 --execute="INSERT INTO roaches VALUES ('American Cockroach', 'United States'), ('Brownbanded Cockroach', 'United States')" \
@@ -163,10 +163,10 @@ CREATE TABLE
 INSERT 2
 ~~~
 
-在这个例子中，我们在命令行里使用 `echo` 来运行命令。
+在这个例子中，我们使用 `echo` 命令运行来自命令行的语句。
 
 ~~~ shell
-# 带有 echo 命令的参数:
+# 带有 echo 命令的语句:
 $ echo "SHOW TABLES; SELECT * FROM roaches;" | cockroach sql --insecure --user=maxroach --host=12.345.67.89 --port=26257 --database=critterdb
 +----------+
 |  Table   |
@@ -181,14 +181,14 @@ $ echo "SHOW TABLES; SELECT * FROM roaches;" | cockroach sql --insecure --user=m
 +-----------------------+---------------+
 ~~~
 
-### 优美的和不优美的输出
+### 美观和不美观的输出
 
-在这个例子中，我们演示优美的和不优美的列表和特殊字符的输出。当优美的输出方式被打开，列表将以 ASCII 编码的形式输出并且特殊字符不会被忽略且以可阅读的方式输出。当优美的输出方式被禁用，列表将以制表符分隔的方式被输出，且特殊字符将被忽略；但是这种方式容易被其他程序解析。
+在这些例子中，我们以美观和不美观方式打印了表和特殊字符的输出。当美观的输出方式被打开，表将以 ASCII 艺术的形式输出，而特殊字符不会被转义，易于被人接受。当美观的输出方式被禁用，表行将以制表符分隔的值被输出，而特殊字符将被转义；这种方式易于被其他程序解析。
 
-当标准输出是终端时，优美的输出方式将被默认启用，但是你也可以禁用它 `--pretty=false`：
+当标准输出是终端时，美观的输出方式将被默认启用，但是你可以明确禁用它 `--pretty=false`：
 
 ~~~ shell
-# 使用默认的优美输出：
+# 使用默认的美观输出：
 $ cockroach sql --insecure \
 --pretty \
 --execute="SELECT '🐥' AS chick, '🐢' AS turtle" \
@@ -207,7 +207,7 @@ $ cockroach sql --insecure \
 ~~~
 
 ~~~ shell
-# 禁用优美输出：
+# 禁用美观输出：
 $ cockroach sql --insecure \
 --pretty=false \
 --execute="SELECT '🐥' AS chick, '🐢' AS turtle" \
@@ -223,7 +223,7 @@ chick turtle
 "\U0001f425"  "\U0001f422"
 ~~~
 
-当输出到其他的程序或者文件时，默认值是相反的。优美输出默认不可用， 但是你也可以启用它 `--pretty`:
+当输出到其他的程序或者文件时，默认值是相反的。美观输出默认不可用， 但是你可以明确启用它 `--pretty`:
 
 ~~~ shell
 # 使用默认的非优美输出:
@@ -244,7 +244,7 @@ chick turtle
 ~~~
 
 ~~~ shell
-# 启用优美输出：
+# 明确启用美观输出：
 $ cockroach sql --insecure \
 --pretty \
 --execute="SELECT '🐥' AS chick, '🐢' AS turtle" > out.txt \
@@ -264,11 +264,11 @@ $ cat out.txt
 +-------+--------+
 ~~~
 
-如果 `--pretty` 没有用 `--execute ` 标识，它将把每个表交互的结果输出应用到这个格式上。
+如果 `--pretty` 没有用 `--execute ` 标志，它将应用于交互的  SQL shell 中每个表结果的输出格式上。
 
 ### 从文件中运行 SQL 语句
 
-在这个例子中，我们演示如何运行一个包含了 SQL 语句的文件：
+在这个例子中，我们显示并运行一个包含 SQL 语句的文件：
 
 ~~~ shell
 $ cat statements.sql
@@ -293,11 +293,13 @@ CREATE TABLE
 INSERT 2
 ~~~
 
-### 在 SQL 终端运行外部命令
+### 在 SQL shell 中运行外部命令
 
-在这个例子中，我们使用  `\!` 去查看在创建表之前 CSV 文件的行和使用 `\|` 向表中插入行。
+在这个例子中，我们使用  `\!` 在创建表之前查看 CSV 文件中的行，并使用 `\|` 向表中插入这些行。
 
-> **注意：<br>这个例子只在当 CSV 文件中的值都是数字时才有效。其他格式的值时，使用在线 CSV-to-SQL   转换器创建你自己的输入程序。**
+> **注意：**
+>
+>这个例子只在当 CSV 文件中的值都是数字时才有效。对于其他格式的值，使用一个在线的 CSV-to-SQL 转换器，或创建你自己的输入程序。
 
 ~~~ sql
 > \! cat test.csv
@@ -325,7 +327,7 @@ INSERT 2
 +----+----+----+
 ~~~
 
-在这个例子中我们创建了一个表并且使用 `\|` 以编程的形式插入值：
+在这个例子中，我们创建了一张表并随后使用 `\|` 以编程的形式插入值：
 
 ~~~ sql
 > CREATE TABLE for_loop (x INT);
@@ -352,9 +354,9 @@ INSERT 2
 +---+
 ~~~
 
-## 参考
+## 另见
 
-- [其他的 Cockroach 命令](https://www.cockroachlabs.com/docs/stable/cockroach-commands.html)
-- [SQL 参数](https://www.cockroachlabs.com/docs/stable/sql-statements.html)
-- [学习 CockroachDB SQL](https://www.cockroachlabs.com/docs/stable/learn-cockroachdb-sql.html)
-- [导入数据](https://www.cockroachlabs.com/docs/stable/import-data.html)
+- [其他 Cockroach 命令](cockroach-commands.md)
+- [SQL 参数](sql-statements.md)
+- [学习 CockroachDB SQL](learn-cockroachdb-sql.md)
+- [导入数据](import-data.md)

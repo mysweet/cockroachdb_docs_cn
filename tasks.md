@@ -33,7 +33,7 @@
 | secure-a-cluster.md                      | jiachenhui  | 完成   | tiansiyuan | 完成   |
 | start-a-local-cluster-in-docker.md       | jiachenhui  | 完成   | tiansiyuan | 完成   |
 | learn-cockroachdb-sql.md                 | DoubleWoodH | 完成   | tiansiyuan | 完成   |
-| use-the-built-in-sql-client.md           | tangxiaoji  | 完成   |            |      |
+| use-the-built-in-sql-client.md           | tangxiaoji  | 完成   | tiansiyuan | 完成   |
 | build-an-app-with-cockroachdb.md         | DoubleWoodH | 完成   | tiansiyuan | 完成   |
 | build-a-go-app-with-cockroachdb.md       | DoubleWoodH | 完成   | tiansiyuan | 完成   |
 | build-a-go-app-with-cockroachdb-gorm.md  | tangxiaoji  | 完成   |            |      |
