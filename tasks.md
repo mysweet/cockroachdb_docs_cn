@@ -18,7 +18,7 @@
 | high-availability.md                     |             |      |            |      |
 | open-source.md                           |             |      |            |      |
 | go-implementation.md                     |             |      |            |      |
-| known-limitations.md                     | tiansiyuan  | 开始   |            |      |
+| known-limitations.md                     | tiansiyuan  | 完成   |            |      |
 | **版本**                                   | ===         | ===  | ===        | ===  |
 | v1.0.4.md                                |             |      |            |      |
 | v1.0.3.md                                |             |      |            |      |
