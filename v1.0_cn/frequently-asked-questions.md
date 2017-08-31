@@ -88,20 +88,20 @@ CockroachDB 是一个 CP (一致性和分区容许的)系统。这意味着，�
 
 是的。CockroachDB 中的每个[事务](transactions.md)保证 [ACID 语义](https://en.wikipedia.org/wiki/ACID) 跨任意表和行，甚至在数据是分布的时候。
 
-- **原子性:** Transactions in CockroachDB are “all or nothing.” If any part of a transaction fails, the entire transaction is aborted, and the database is left unchanged. If a transaction succeeds, all mutations are applied together with virtual simultaneity. For a detailed discussion of atomicity in CockroachDB transactions, see [How CockroachDB Distributes Atomic Transactions](https://www.cockroachlabs.com/blog/how-cockroachdb-distributes-atomic-transactions/).
-- **一致性:** SQL operations never see any intermediate states and move the database from one valid state to another, keeping indexes up to date. Operations always see the results of previously completed statements on overlapping data and maintain specified constraints such as unique columns. For a detailed look at how we've tested CockroachDB for correctness and consistency, see [DIY Jepsen Testing of CockroachDB](https://www.cockroachlabs.com/blog/diy-jepsen-testing-cockroachdb/).
-- **隔离:** By default, transactions in CockroachDB use serializable snapshot isolation (SSI). This means that even concurrent read-write transactions will never result in anomalies. We also provide snapshot isolation (SI), which is more performant with high-contention workloads, although it exhibits anomalies not present in SSI (write skew). For a detailed discussion of isolation in CockroachDB transactions, see [Serializable, Lockless, Distributed: Isolation in CockroachDB](https://www.cockroachlabs.com/blog/serializable-lockless-distributed-isolation-cockroachdb/).
-- **持久性:** In CockroachDB, every acknowledged write has been persisted consistently on a majority of replicas (by default, at least 2) via the [Raft consensus algorithm](https://raft.github.io/). Power or disk failures that affect only a minority of replicas (typically 1) do not prevent the cluster from operating and do not lose any data.
+- **原子性:**  CockroachDB 中的事务是“全部或没有。” 如果一个事务的任何部分失败，整个事务被退出，数据库没有变化。如果一个事务成功，所有的变动几乎是同时被应用。关于 CockroachDB  事务原子性的详细讨论，见[CockroachDB 如何分布原子事务](https://www.cockroachlabs.com/blog/how-cockroachdb-distributes-atomic-transactions/)。
+- **一致性:** SQL 操作永远不会见到任何中间状态，并将数据库从一个有效状态转到另一个有效状态，保持索引更新。操作总是见到前面完成的重叠数据的语句的结果，并维护特定的限制，如唯一的列。关于我们如何测试 CockroachDB 的正确性和一致性的细致观察，见 [CockroachDB DIY Jepsen 测试](https://www.cockroachlabs.com/blog/diy-jepsen-testing-cockroachdb/)。
+- **隔离:** CockroachDB 中的事务默认使用可序列化快照隔离 (SSI)。这意味着，即使是并发的读-写事务也从不会导致异常。我们也提供快照隔离 (SI)，这对于高竞争的负载性能更好，尽管它会出现 SSI 中没有的异常（写偏）。关于 CockroachDB 事务隔离的详细讨论，见[可序列化、无锁的、分布式：CockroachDB 中的隔离](https://www.cockroachlabs.com/blog/serializable-lockless-distributed-isolation-cockroachdb/)。
+- **持久性:** 在 CockroachDB 中，每一个被确认的写在大多数（默认至少是 2 个）副本上通过 [Raft 共识算法](https://raft.github.io/)保持一致性。仅影响少数（典型是 1 个）副本的供电或者磁盘故障不会阻碍集群运行，而且不会丢失任何数据。
 
 ## 由于 CockroachDB 是受 Spanner 启发的，它需要原子时钟同步时间吗？
 
-No. CockroachDB was designed to work without atomic clocks or GPS clocks. It’s an open source database intended to be run on arbitrary collections of nodes, from physical servers in a corp development cluster to public cloud infrastructure using the flavor-of-the-month virtualization layer. It’d be a showstopper to require an external dependency on specialized hardware for clock synchronization. However, CockroachDB does require moderate levels of clock synchronization for correctness. If clocks drift past a maximum threshold, nodes will be taken offline. It's therefore highly recommended to run [NTP](http://www.ntp.org/) or other clock synchronization software on each node.
+不需要。CockroachDB 被设计为不使用原子时钟或 GPS 时钟工作。它是一个意于运行在任何节点集合上的开源数据库，从一个公司开发集群的物理服务器到使用最新流行的虚拟化层的公有云基础设施。要求一个外部依赖于特殊的硬件用于时钟同步，将是一个搅局者。然而，CockroachDB 确实要求中等水平的时钟同步，用于保证正确性。如果时钟漂移超出了一个最大阈值，节点会被下线。因此，高度推荐在每个节点上运行 [NTP](http://www.ntp.org/) 或者时钟同步软件。
 
-For more details on how CockroachDB handles unsychronized clocks, see [Clock Synchronization](recommended-production-settings.md#clock-synchronization). And for a broader discussion of clocks, and the differences between clocks in Spanner and CockroachDB, see [Living Without Atomic Clocks](https://www.cockroachlabs.com/blog/living-without-atomic-clocks/).
+关于 CockroachDB 如何处理非同步时钟的更多细节，见[时钟同步](recommended-production-settings.md#clock-synchronization)。而关于时钟，以及 Spanner 和 CockroachDB 中时钟差异的更广泛讨论，见[没有原子时钟的办法](https://www.cockroachlabs.com/blog/living-without-atomic-clocks/)。
 
 ## 哪些语言可以和 CockroachDB 一起使用?
 
-CockroachDB supports the PostgreSQL wire protocol, so you can use any available PostgreSQL client drivers. We've tested it from the following languages:
+CockroachDB 支持 PostgreSQL 连线协议，所以你能够使用任何可用的 PostgreSQL 客户端驱动程序。我们用下列语言进行了测试：
 
 - Go
 - Python
@@ -113,44 +113,56 @@ CockroachDB supports the PostgreSQL wire protocol, so you can use any available 
 - PHP
 - Rust
 
-See [Install Client Drivers](install-client-drivers.md) for more details.
+更多细节见[安装驱动程序](install-client-drivers.md)。
 
 ## 什么是 CockroachDB 的安全模型？
 
-You can run a secure or insecure CockroachDB cluster. When secure, client/node and inter-node communication is encrypted, and SSL certificates authenticate the identity of both clients and nodes. When insecure, there's no encryption or authentication.
+你可以运行一个安全或者不安全的 CockroachDB 集群。安全的，客户端/节点和节点间通信是加密的，而且 SSL 证书认证客户端和节点的身份。不安全的，没有加密和认证。
 
-Also, CockroachDB supports common SQL privileges on databases and tables. The `root` user has privileges for all databases, while unique users can be granted privileges for specific statements at the database and table-levels.
+而且，CockroachDB 支持通用的 SQL 数据库和表权限。`root` 用户拥有所有数据库的权限，而单个用户可以被授予特定语句在数据库和表级别的权限。
 
-For more details, see our documentation on [privileges](privileges.md) and the [`GRANT`](grant.md) statement.
+更多细节，见我们关于[权限](privileges.md)和 [`GRANT`](grant.md) 语句的文档。
 
 ## CockroachDB 与 MySQL 或者 PostgreSQL 如何比较？
 
-While all of these databases support SQL syntax, CockroachDB is the only one that scales easily (without the manual complexity of sharding), rebalances and repairs itself automatically, and distributes transactions seamlessly across your cluster.
+尽管所有这些数据库都支持 SQL 语法，CockroachDB 是唯一一个容易地扩展（不需要手动分片的复杂操作），自动再平衡和修复，而且跨集群无缝分布事务。
 
-For more insight, see [CockroachDB in Comparison](cockroachdb-in-comparison.md).
+更多深刻见解，见[比较 CockroachDB](cockroachdb-in-comparison.md)。
 
 ## CockroachDB 与 Cassandra, HBase, MongoDB 或 Riak 如何比较？
 
-While all of these are distributed databases, only CockroachDB supports distributed transactions and provides strong consistency. Also, these other databases provide custom APIs, whereas CockroachDB offers standard SQL with extensions.
+尽管所有这些都是分布式数据库，只有 CockroachDB 支持分布式事务并提供强一致。而且，这些其他数据库提供定制的 API，而 CockroachDB 提供标准的 SQL 并扩展。
 
-For more insight, see [CockroachDB in Comparison](cockroachdb-in-comparison.md).
+更多深刻见解，见[比较 CockroachDB](cockroachdb-in-comparison.md)。
 
 ## MySQL 或者 PostgreSQL 应用能够迁移到 CockroachDB 吗？
 
-The current version of CockroachDB is intended for use with new applications. The initial subset of SQL we support is small relative to the extensive standard, and every popular database implements its own set of extensions and exhibits a unique set of idiosyncrasies. This makes porting an existing application non-trivial unless it is only a very lightweight consumer of SQL functionality.
+CockroachDB 的当前版本是用于新的应用的。我们支持的 SQL 的最初子集相对于广泛的标准是小的，每一个流行的数据库实现了它自己的扩展并展现了唯一的特质集合。这使得移植一个现有的应用不是轻而易举的，除非它是一个非常轻量级的 SQL 功能。
 
 ## Cockroach Labs 提供云数据库作为服务吗？
 
-Not yet, but this is on our long-term roadmap.
+还没有，但是这在我们的长期计划中。
 
 ## 我能使用 CockroachDB 作为键-值存储吗？
 
-{% include faq/simulate-key-value-store.md %}
+CockroachDB 是一个构建于一个事务性和强一致的键-值存储之上的分布式 SQL 数据库。尽管不可能直接访问键-值存储，你可以只用一个两列的“简单”表映射直接访问，其中一列被设置为主键：
+
+~~~ sql
+> CREATE TABLE kv (k INT PRIMARY KEY, v BYTES);
+~~~
+
+当这样一张“简单的”表没有所以或外键时，[`INSERT`](insert.md)/[`UPSERT`](upsert.md)/[`UPDATE`](update.md)/[`DELETE`](delete.md) 语句以极小的开销（个位数百分比的性能下降）翻译为键-值操作。例如，下面的 `UPSERT` 加入或替换表中的一行会翻译为一条键-值 Put 操作：
+
+~~~ sql
+> UPSERT INTO kv VALUES (1, b'hello')
+~~~
+
+这个 SQL 表方法也提供了一个定义良好的查询语言，一个已知的事务模型，以及在需要时加入更多列到表中的灵活性。
 
 ## 有没被回答的问题吗？
 
-- [CockroachDB Community Forum](https://forum.cockroachlabs.com): Ask questions, find answers, and help other users.
-- [Join us on Gitter](https://gitter.im/cockroachdb/cockroach): This is the most immediate way to connect with CockroachDB engineers. To open Gitter without leaving these docs, click **Chat with Developers** in the lower-right corner of any page.
-- [SQL FAQs](sql-faqs.md): Get answers to frequently asked questions about CockroachDB SQL.
-- [Operational FAQS](operational-faqs.md): Get answers to frequently asked questions about operating CockroachDB.
+- [CockroachDB 社区论坛](https://forum.cockroachlabs.com)：问问题，寻找答案，并帮助其他用户。
+- [在 Gitter 上加入我们](https://gitter.im/cockroachdb/cockroach)：这是与 CockroachDB 工程师们连接的最直接方式。打开 Gitter 而不离开这些文档，在任何页面的右下角点击 **Chat with Developers**。
+- [SQL FAQs](sql-faqs.md)：获得关于 CockroachDB SQL 的常问问题的答案。
+- [运行 FAQs](operational-faqs.md)：获得关于操作 CockroachDB 的常问问题的答案。
 
