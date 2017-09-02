@@ -15,5 +15,6 @@
 | [`ALTER COLUMN`](alter-column.html)      | 给数据列添加 [默认值](https://www.cockroachlabs.com/docs/stable/default-value.html) 或添加 [Not Null 限制](https://www.cockroachlabs.com/docs/stable/not-null.html)。 |
 | [`DROP COLUMN`](drop-column.html)        | 移除一列。                                    |
 | [`DROP CONSTRAINT`](drop-constraint.html) | 移除列限制。                                   |
+| [`RENAME COLUMN`](rename-column.html)    | 修改列的名字。                                  |
 | [`RENAME TABLE`](rename-table.html)      | 修改表名。                                    |
 | `SPLIT AT`                               | *（文档申请）* 通过在键值对层中划分数据的理想位置来提高性能。         |
