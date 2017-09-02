@@ -51,6 +51,7 @@
 | add-column.md                            | tangxiaoji  | 完成   |            |      |
 | add-constraint.md                        | Wbofeng     | 完成   |            |      |
 | alter-column.md                          | jiachenhui  |      |            |      |
+| alter-table.md                          | tangxiaoji    |      |     ||
 | **部署**                                   | ===         | ===  | ===        | ===  |
 | **管理**                                   | ===         | ===  | ===        | ===  |
 | **排错**                                   | ===         | ===  | ===        | ===  |
