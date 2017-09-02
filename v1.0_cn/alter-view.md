@@ -10,7 +10,7 @@
 
 ## 简介
 
-![]()
+![](https://github.com/TechCatsLab/cockroachdb_docs_cn/blob/master/images/alter-view-synopsis.png)
 
 ## 参数
 
