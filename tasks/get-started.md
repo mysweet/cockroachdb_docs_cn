@@ -15,10 +15,16 @@
 | build-a-go-app-with-cockroachdb-gorm.md  | tangxiaoji  | 完成   | tiansiyuan | 完成   |
 | build-a-python-app-with-cockroachdb.md   | zhaoyuxin   | 完成   | tiansiyuan | 完成   |
 | build-a-python-app-with-cockroachdb-sqlalchemy.md | zhaoyuxin   |      |            |      |
+| build-a-ruby-app-with-cockroachdb.md |    |      |            |      |
+| build-a-ruby-app-with-cockroachdb-activerecord.md |    |      |            |      |
 | build-a-nodejs-app-with-cockroachdb.md   | zhaoyuxin   | 完成   | tangxiaoji |      |
 | build-a-nodejs-app-with-cockroachdb-sequelize.md | tangxiaoji  | 完成   | tiansiyuan | 完成   |
 | build-a-java-app-with-cockroachdb.md     | zhaoyuxin   | 完成   | tiansiyuan | 完成   |
 | build-a-java-app-with-cockroachdb-hibernate.md | tangxiaoji  |      |            |      |
+| build-a-c++-app-with-cockroachdb.md |    |      |            |      |
+| build-a-clojure-app-with-cockroachdb.md |    |      |            |      |
+| build-a-php-app-with-cockroachdb.md |    |      |            |      |
+| build-a-rust-app-with-cockroachdb.md |    |      |            |      |
 | demo-data-replication.md                 | DoubleWoodH | 完成   | tiansiyuan | 完成   |
 | demo-fault-tolerance-and-recovery.md     | DoubleWoodH | 完成   | tiansiyuan | 完成   |
 | demo-automatic-rebalancing.md            | tiansiyuan  | 完成   |            |      |
