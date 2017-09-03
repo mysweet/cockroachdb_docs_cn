@@ -286,3 +286,67 @@ $ cockroach.exe start --log-dir= --insecure
 
 - 如果列数增加了，准备好的语句返回错误，但尽管如此还是写入了数据。
 - 如果列数不变但类型变了，准备好的语句写入数据，而且不返回错误。
+
+## 删除在同一张表上与另一个索引交错的索引
+
+> **注意：**
+> 
+> 在 1.1 版中解决了。见 <a href="https://github.com/cockroachdb/cockroach/pull/17860">#17860</a>。
+
+在不太可能的情况下，你[交错](interleave-in-parent.md)一个索引到同一张表的另一个索引，而且随后[删除](drop-index.md)了被交错的索引，将来在表上的 DDL 操作会失败。
+
+例如：
+
+~~~ sql
+> CREATE TABLE t1 (id1 INT PRIMARY KEY, id2 INT, id3 INT);
+~~~
+
+~~~ sql
+> CREATE INDEX c ON t1 (id2)
+      STORING (id1, id3)
+      INTERLEAVE IN PARENT t1 (id2);
+~~~
+
+~~~ sql
+> SHOW INDEXES FROM t1;
+~~~
+
+~~~
++-------+---------+--------+-----+--------+-----------+---------+----------+
+| Table |  Name   | Unique | Seq | Column | Direction | Storing | Implicit |
++-------+---------+--------+-----+--------+-----------+---------+----------+
+| t1    | primary | true   |   1 | id1    | ASC       | false   | false    |
+| t1    | c       | false  |   1 | id2    | ASC       | false   | false    |
+| t1    | c       | false  |   2 | id1    | N/A       | true    | false    |
+| t1    | c       | false  |   3 | id3    | N/A       | true    | false    |
++-------+---------+--------+-----+--------+-----------+---------+----------+
+(4 rows)
+~~~
+
+~~~ sql
+> DROP INDEX t1@c;
+~~~
+
+~~~ sql
+> DROP TABLE t1;
+~~~
+
+~~~
+pq: invalid interleave backreference table=t1 index=3: index-id "3" does not exist
+~~~
+
+~~~ sql
+> TRUNCATE TABLE t1;
+~~~
+
+~~~
+pq: invalid interleave backreference table=t1 index=3: index-id "3" does not exist
+~~~
+
+~~~ sql
+> ALTER TABLE t1 RENAME COLUMN id3 TO id4;
+~~~
+
+~~~
+pq: invalid interleave backreference table=t1 index=3: index-id "3" does not exist
+~~~
