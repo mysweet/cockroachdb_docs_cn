@@ -1,6 +1,5 @@
 # FAQ
 
-
 ## 什么是 CockroachDB？
 
 CockroachDB 是一个建于事务性和强一致的键-值存储之上的分布式 SQL 数据库。它横向**扩展**；以最小的延迟终端并无需手动干预而**克服**磁盘、机器、机架，甚至数据中心的故障；支持**强一致** ACID 事务；并一组 **SQL** API 用于结构化、操作和查询数据。
@@ -114,6 +113,12 @@ CockroachDB 支持 PostgreSQL 连线协议，所以你能够使用任何可用�
 - Rust
 
 更多细节见[安装驱动程序](install-client-drivers.md)。
+
+## 为什么 CockroachDB 使用 PostgreSQL 连线协议而不是 MySQL 协议？
+
+CockroachDB 使用 PostgreSQL 连线协议，因为它的文档比 MySQL 协议的文档要好，还因为 PostgreSQL 有一个更自由的开源许可，类似于 BSD 或 MIT 许可，而 MySQL 有一个限制更多的 GNU GPL 许可。
+
+然而，注意，使用的协议并没有严重影响移植应用程序有多容易。在几乎每种语言中更换 SQL 网络驱动程序都是相当直接明了。令从一个数据库换为另一个数据库困难的是所使用的 SQL 方言。 CockroachDB 的方言也是基于 PostgreSQL 的。
 
 ## 什么是 CockroachDB 的安全模型？
 
