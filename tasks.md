@@ -7,7 +7,7 @@
 | **FAQs**                                 | ===         | ===  | ===        | ===  |
 | frequently-asked-questions.md            | tiansiyuan  | 完成   |            |      |
 | sql-faqs.md                              | DoubleWoodH |      |            |      |
-| operational-faqs.md                      | tiansiyuan  | 开始   |            |      |
+| operational-faqs.md                      | tiansiyuan  | 完成   |            |      |
 | cockroachdb-in-comparison.md             | tiansiyuan  | 开始   |            |      |
 | cockroachdb-architecture.md              | tiansiyuan  | 完成   |            |      |
 | simplified-deployment.md                 |             |      |            |      |
@@ -51,8 +51,8 @@
 | add-column.md                            | tangxiaoji  | 完成   |            |      |
 | add-constraint.md                        | Wbofeng     | 完成   |            |      |
 | alter-column.md                          | jiachenhui  |      |            |      |
-| alter-table.md                          | tangxiaoji    | 完成     |     ||
-| alter-view.md   | tangxiaoji ||||
+| alter-table.md                           | tangxiaoji  | 完成   |            |      |
+| alter-view.md                            | tangxiaoji  |      |            |      |
 | **部署**                                   | ===         | ===  | ===        | ===  |
 | **管理**                                   | ===         | ===  | ===        | ===  |
 | **排错**                                   | ===         | ===  | ===        | ===  |
