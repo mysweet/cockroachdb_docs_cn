@@ -1,9 +1,3 @@
----
-title: BACKUP
-summary: Back up your CockroachDB cluster to a cloud storage services such as AWS S3, Google Cloud Storage, or other NFS.
-toc: false
----
-
 # 备份（企业级) 
 
 将你的 CockroachDB 数据库集群备份至一个云存储服务，如 AWS S3，Google 云存储或其他NFS(网络文件系统)。
