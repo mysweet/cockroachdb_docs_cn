@@ -7,7 +7,7 @@
 | frequently-asked-questions.md   | tiansiyuan  | 完成   |      |      |
 | sql-faqs.md                     | DoubleWoodH |      |      |      |
 | operational-faqs.md             | tiansiyuan  | 完成   |      |      |
-| cockroachdb-in-comparison.md    | tiansiyuan  | 开始   |      |      |
+| cockroachdb-in-comparison.md    | tiansiyuan  | 完成   |      |      |
 | cockroachdb-architecture.md     | tiansiyuan  | 完成   |      |      |
 | simplified-deployment.md        |             |      |      |      |
 | strong-consistency.md           |             |      |      |      |
