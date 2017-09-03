@@ -8,4 +8,5 @@
 | add-constraint.md | Wbofeng    | 完成   |      |      |
 | alter-column.md   | jiachenhui |      |      |      |
 | alter-table.md    | tangxiaoji | 完成   |      |      |
-| alter-view.md     | tangxiaoji |      |      |      |
+| alter-view.md     | tangxiaoji | 完成    |      |      |
+| backup.md |  ||||
