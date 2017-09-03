@@ -15,6 +15,6 @@
 | distributed-transactions.md     |             |      |      |      |
 | automated-scaling-and-repair.md |             |      |      |      |
 | high-availability.md            |             |      |      |      |
-| open-source.md                  |             |      |      |      |
-| go-implementation.md            |             |      |      |      |
+| open-source.md                  | tiansiyuan  | 完成   |      |      |
+| go-implementation.md            | tiansiyuan  | 完成   |      |      |
 | known-limitations.md            | tiansiyuan  | 完成   |      |      |
