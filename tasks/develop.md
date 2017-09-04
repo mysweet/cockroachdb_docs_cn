@@ -13,7 +13,7 @@
 | alter-table.md              | tangxiaoji | 完成   |      |      |
 | alter-view.md               | tangxiaoji | 完成   |      |      |
 | backup.md                   |            |      |      |      |
-| begin-transaction.md        | jiachenhui |      |      |      |
+| begin-transaction.md        | jiachenhui | 完成   |      |      |
 | commit-transaction.md       |            |      |      |      |
 | create-database.md          |            |      |      |      |
 | create-index.md             |            |      |      |      |
