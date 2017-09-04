@@ -9,7 +9,7 @@
 | sql-statements.md           |            |      |      |      |
 | add-column.md               | tangxiaoji | 完成   |      |      |
 | add-constraint.md           | Wbofeng    | 完成   |      |      |
-| alter-column.md             | jiachenhui |      |      |      |
+| alter-column.md             | jiachenhui | 完成   |      |      |
 | alter-table.md              | tangxiaoji | 完成   |      |      |
 | alter-view.md               | tangxiaoji | 完成   |      |      |
 | backup.md                   |            |      |      |      |
