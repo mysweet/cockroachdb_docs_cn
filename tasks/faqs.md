@@ -9,7 +9,7 @@
 | operational-faqs.md             | tiansiyuan  | 完成   |      |      |
 | cockroachdb-in-comparison.md    | tiansiyuan  | 完成   |      |      |
 | cockroachdb-architecture.md     | tiansiyuan  | 完成   |      |      |
-| simplified-deployment.md        |             |      |      |      |
+| simplified-deployment.md        | tiansiyuan  | 完成   |      |      |
 | strong-consistency.md           |             |      |      |      |
 | sql.md                          | DoubleWoodH |      |      |      |
 | distributed-transactions.md     |             |      |      |      |
