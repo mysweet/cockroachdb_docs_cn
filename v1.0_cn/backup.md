@@ -87,56 +87,56 @@ CockroachDB 提供了两种类型的备份：全备份和增量备份。
 | `destination`                           | 你想备份的 URL.<br/><br/>查看更多 URL 的细节，请看 [备份 URL 文件](https://www.cockroachlabs.com/docs/stable/backup.html#backup-file-urls)。 |
 | `AS OF SYSTEM TIME timestamp`           | 备份以 [`时间戳`](timestamp.html)形式存在的数据。However，但是 `时间戳`必须比集群的最后一个垃圾回收时间（默认24小时发生一次），但这对每个表来说是可配置的。 |
 | `INCREMENTAL FROM full_backup_location` | 创建一个增量备份，其中包括所提供的 URL 上列出的所有备份。<br/><br/>查看更多关于URL 的内容，请看[备份 URL 文件](https://www.cockroachlabs.com/docs/stable/backup.html#backup-file-urls)。 |
-| `incremental_backup_location`           | 创建一个增量备份，其中包括在所提供的URL上列出的所有备份。<br/><br/>Lists of incremental backups must be sorted from oldest to newest. The newest incremental backup's timestamp must be within the table's garbage collection period. <br/><br/>For information about this URL structure, see [Backup File URLs](#backup-file-urls). <br/><br/>For more information about garbage collection, see [Configure Replication Zones](configure-replication-zones.html#replication-zone-format). |
+| `incremental_backup_location`           | 创建一个增量备份，其中包括在所提供的URL上列出的所有备份。<br/><br/>增量备份的列表必须从最老到最新排序。最新的增量备份的时间戳必须在表的垃圾收集周期内。 <br/><br/>查看 URL 结构信息，请看 [备份文件 URL](https://www.cockroachlabs.com/docs/stable/backup.html#backup-file-urls)。 <br/><br/>查看垃圾回收信息，请看 [配置复制区](https://www.cockroachlabs.com/docs/stable/configure-replication-zones.html#replication-zone-format)。 |
 
-### Backup File URLs
+### 配置文件 URL
 
-The URL for your backup's destination/locations must use the following format:
+备份的目的地/位置的URL必须使用如下格式：
 
 ~~~
 [scheme]://[host]/[path to backup]?[parameters]
 ~~~
 
-`[path to backup]` must be unique for each backup, but the other values depend on where you want to store the backup.
+`[path to backup]` 对于每次备份来说必须是唯一的，其他值取决于你存储备份位置。
 
-| Backup Location      | scheme      | host                 | parameters                               |
-| -------------------- | ----------- | -------------------- | ---------------------------------------- |
-| Amazon S3            | `s3`        | Bucket name          | `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` |
-| Azure                | `azure`     | Container name       | `AZURE_ACCOUNT_KEY`, `AZURE_ACCOUNT_NAME` |
-| Google Cloud Storage | `gs`        | Bucket name          | None––currently only supports instance auth, but we can build non-instance auth at a customer's request |
-| HTTP                 | `http`      | Remote host          | N/A                                      |
-| NFS                  | `nodelocal` | File system location | N/A                                      |
+| 备份位置                 | 方案          | 主机名    | 参数                                       |
+| -------------------- | ----------- | ------ | ---------------------------------------- |
+| Amazon S3            | `s3`        | 桶的名字   | `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` |
+| Azure                | `azure`     | 容器名    | `AZURE_ACCOUNT_KEY`, `AZURE_ACCOUNT_NAME` |
+| Google Cloud Storage | `gs`        | 桶的名字   | None––目前只支持实例验证，但是我们可以在客户的要求上建立非实力验证     |
+| HTTP                 | `http`      | 远程主机   | N/A                                      |
+| NFS                  | `nodelocal` | 文件系统地址 | N/A                                      |
 
-{{site.data.alerts.callout_info}}Because CockroachDB is a distributed system, you cannot meaningfully store backups "locally" on nodes. The entire backup file must be stored in a single location, so attempts to store backups locally must point to an NFS drive to be useful.{{site.data.alerts.end}}
+> **注意：**因为cockroachdb是一个分布式的系统，你不可能存储备份节点上有意义的”本地”。整个备份文件必须存储在一个位置，因此本地存储备份的尝试必须指向NFS驱动器才是有用的。
 
-## Examples
+## 例子
 
-Per our guidance in the [Performance](#performance) section, we recommend starting backups from a time at least 10 seconds in the past using `AS OF SYSTEM TIME`.
+根据我们在[性能](https://www.cockroachlabs.com/docs/stable/backup.html#performance)部分中的指导，我们建议在系统时间 `AS OF SYSTEM TIME` 以前至少从10秒开始备份。
 
-### Backup a Single Table or View
+### 备份一个单独的表或视图
 
 ~~~ sql
 > BACKUP bank.customers TO 'azure://acme-co-backup/table-customer-2017-03-27-full?AZURE_ACCOUNT_KEY=hash&AZURE_ACCOUNT_NAME=acme-co'
 AS OF SYSTEM TIME '2017-06-09 16:13:55.571516+00:00';
 ~~~
 
-### Backup Multiple Tables
+### 备份多个表
 
 ~~~ sql
 > BACKUP bank.customers, bank.accounts TO 'azure://acme-co-backup/tables-accounts-customers-2017-03-27-full?AZURE_ACCOUNT_KEY=hash&AZURE_ACCOUNT_NAME=acme-co'
 AS OF SYSTEM TIME '2017-06-09 16:13:55.571516+00:00');
 ~~~
 
-### Backup an Entire Database
+### 备份整个数据库
 
 ~~~ sql
 > BACKUP DATABASE bank TO 'azure://acme-co-backup/database-bank-2017-03-27-full?AZURE_ACCOUNT_KEY=hash&AZURE_ACCOUNT_NAME=acme-co'
 AS OF SYSTEM TIME '2017-06-09 16:13:55.571516+00:00';
 ~~~
 
-### Create Incremental Backups
+### 创建增量备份
 
-Incremental backups must be based off of full backups you've already created.
+增量备份必须基于已经创建的完整备份。
 
 ~~~ sql
 > BACKUP DATABASE bank TO 'azure://acme-co-backup/database-bank-2017-03-29-incremental?AZURE_ACCOUNT_KEY=hash&AZURE_ACCOUNT_NAME=acme-co'
@@ -145,7 +145,7 @@ INCREMENTAL FROM 'azure://acme-co-backup/database-bank-2017-03-27-full?AZURE_ACC
 AS OF SYSTEM TIME '2017-06-09 16:13:55.571516+00:00'
 ~~~
 
-## See Also
+## 查看更多
 
-- [`RESTORE`](restore.html)
-- [Configure Replication Zones](configure-replication-zones.html)
+- [`RESTORE`](https://www.cockroachlabs.com/docs/stable/restore.html)
+- [配置复制区](https://www.cockroachlabs.com/docs/stable/configure-replication-zones.html)
