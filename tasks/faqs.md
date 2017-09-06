@@ -13,8 +13,8 @@
 | strong-consistency.md           | tiansiyuan  | 完成   |      |      |
 | sql.md                          | DoubleWoodH |      |      |      |
 | distributed-transactions.md     | tiansiyuan  | 完成   |      |      |
-| automated-scaling-and-repair.md |             |      |      |      |
-| high-availability.md            |             |      |      |      |
+| automated-scaling-and-repair.md | tiansiyuan  | 完成   |      |      |
+| high-availability.md            | tiansiyuan  | 完成   |      |      |
 | open-source.md                  | tiansiyuan  | 完成   |      |      |
 | go-implementation.md            | tiansiyuan  | 完成   |      |      |
 | known-limitations.md            | tiansiyuan  | 完成   |      |      |
