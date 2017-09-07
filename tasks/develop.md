@@ -4,7 +4,7 @@
 
 | 文件名                         | 翻译         | 状态   | 审稿   | 状态   |
 | --------------------------- | ---------- | ---- | ---- | ---- |
-| install-client-drivers.md   |            |      |      |      |
+| install-client-drivers.md   | tiansiyuan | 完成   |      |      |
 | sql-feature-support.md      |            |      |      |      |
 | sql-statements.md           |            |      |      |      |
 | add-column.md               | tangxiaoji | 完成   |      |      |
@@ -12,11 +12,11 @@
 | alter-column.md             | jiachenhui | 完成   |      |      |
 | alter-table.md              | tangxiaoji | 完成   |      |      |
 | alter-view.md               | tangxiaoji | 完成   |      |      |
-| backup.md                   | tangxiaoji           | 完成     |      |      |
+| backup.md                   | tangxiaoji | 完成   |      |      |
 | begin-transaction.md        | jiachenhui | 完成   |      |      |
-| commit-transaction.md       | tangxiaoji          | 完成     |      |      |
-| create-database.md          | tangxiaoji           | 完成    |      |      |
-| create-index.md             | tangxiaoji           |      |      |      |
+| commit-transaction.md       | tangxiaoji | 完成   |      |      |
+| create-database.md          | tangxiaoji | 完成   |      |      |
+| create-index.md             | tangxiaoji |      |      |      |
 | create-table.md             |            |      |      |      |
 | create-table-as.md          |            |      |      |      |
 | create-user.md              |            |      |      |      |
