@@ -15,7 +15,7 @@
 | backup.md                   | tangxiaoji           | 完成     |      |      |
 | begin-transaction.md        | jiachenhui | 完成   |      |      |
 | commit-transaction.md       | tangxiaoji          | 完成     |      |      |
-| create-database.md          |            |      |      |      |
+| create-database.md          | tangxiaoji           |      |      |      |
 | create-index.md             |            |      |      |      |
 | create-table.md             |            |      |      |      |
 | create-table-as.md          |            |      |      |      |
