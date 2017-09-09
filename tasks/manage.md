@@ -9,7 +9,7 @@
 | view-node-details.md                   |            |      |      |      |
 | view-version-details.md                |            |      |      |      |
 | upgrade-cockroach-version.md           |            |      |      |      |
-| back-up-data.md                        |            |      |      |      |
+| back-up-data.md                        | tiansiyuan | 完成   |      |      |
 | restore-data.md                        | tiansiyuan | 完成   |      |      |
 | sql-dump.md                            |            |      |      |      |
 | import-data.md                         |            |      |      |      |
