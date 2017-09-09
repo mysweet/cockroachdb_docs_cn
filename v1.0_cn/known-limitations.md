@@ -201,6 +201,11 @@ pq: source name "caps" not found in FROM clause
 
 ## 计数数据表中不同的行
 
+> 注：
+> 
+> 在 [v1.0.1](../releases_cn/v1.0.1.md) 中已解决。见 [#17833](https://github.com/cockroachdb/cockroach/pull/17833)。
+
+
 在使用 `count(DISTINCT a.*)` 基于列的一个子集计数一张表中不同的行时，与 `count(*)` 相反，结果几乎总是不正确，例如：
 
 ~~~ sql
@@ -291,7 +296,7 @@ $ cockroach.exe start --log-dir= --insecure
 
 > **注意：**
 > 
-> 在 1.1 版中解决了。见 <a href="https://github.com/cockroachdb/cockroach/pull/17860">#17860</a>。
+> 在 1.1-alpha.20170831 版中解决了。见 <a href="https://github.com/cockroachdb/cockroach/pull/17860">#17860</a>。
 
 在不太可能的情况下，你[交错](interleave-in-parent.md)一个索引到同一张表的另一个索引，而且随后[删除](drop-index.md)了被交错的索引，将来在表上的 DDL 操作会失败。
 

@@ -207,11 +207,11 @@ func main() {
 因为带有默认的 `SERIALIZABLE` 隔离层，当万一出现读写竞争的情况，CockroachDB 可能要求 [客户端重试一个事务](transactions.md#transaction-retries)。CockroachDB 会提供一个通用的 **重试** 函数，它运行在事务里面，必要时候就会重试。对 Go 来说，这个 CockroachDB 重试函数在 CockroachDB 的 Go 客户端的 `crdb` 包里。正如下面所做的， 克隆这个库到你的 `$GOPATH` 里：
 
 ```shell
-$ mkdir -p $GOPATH/github.com/cockroachdb
+$ mkdir -p $GOPATH/src/github.com/cockroachdb
 ```
 
 ```shell
-$ cd $GOPATH/github.com/cockroachdb
+$ cd $GOPATH/src/github.com/cockroachdb
 ```
 
 ```shell
