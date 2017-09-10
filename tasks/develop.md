@@ -19,7 +19,7 @@
 | create-index.md             | tangxiaoji | 完成   |      |      |
 | create-table.md             | tangxiaoji |      |      |      |
 | create-table-as.md          |            |      |      |      |
-| create-user.md              | jiachenhui |      |      |      |
+| create-user.md              | jiachenhui | 完成   |      |      |
 | create-view.md              |            |      |      |      |
 | delete.md                   |            |      |      |      |
 | drop-column.md              |            |      |      |      |
