@@ -20,7 +20,7 @@
 | create-table.md             | tangxiaoji | 完成   |      |      |
 | create-table-as.md          |            |      |      |      |
 | create-user.md              | jiachenhui | 完成   |      |      |
-| create-view.md              | jiachenhui |      |      |      |
+| create-view.md              | jiachenhui | 完成   |      |      |
 | delete.md                   |            |      |      |      |
 | drop-column.md              |            |      |      |      |
 | drop-constraint.md          |            |      |      |      |
