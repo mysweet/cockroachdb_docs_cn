@@ -17,10 +17,10 @@
 | commit-transaction.md       | tangxiaoji | 完成   |      |      |
 | create-database.md          | tangxiaoji | 完成   |      |      |
 | create-index.md             | tangxiaoji | 完成   |      |      |
-| create-table.md             | tangxiaoji | 完成     |      |      |
+| create-table.md             | tangxiaoji | 完成   |      |      |
 | create-table-as.md          |            |      |      |      |
 | create-user.md              | jiachenhui | 完成   |      |      |
-| create-view.md              |            |      |      |      |
+| create-view.md              | jiachenhui |      |      |      |
 | delete.md                   |            |      |      |      |
 | drop-column.md              |            |      |      |      |
 | drop-constraint.md          |            |      |      |      |
