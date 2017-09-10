@@ -11,7 +11,7 @@
 | upgrade-cockroach-version.md           |            |      |      |      |
 | back-up-data.md                        | tiansiyuan | 完成   |      |      |
 | restore-data.md                        | tiansiyuan | 完成   |      |      |
-| sql-dump.md                            |            |      |      |      |
+| sql-dump.md                            | tiansiyuan | 完成   |      |      |
 | import-data.md                         |            |      |      |      |
 | generate-cockroachdb-resources.md      |            |      |      |      |
 | diagnostics-reporting.md               |            |      |      |      |
