@@ -22,7 +22,7 @@
 | create-user.md              | jiachenhui | 完成   |      |      |
 | create-view.md              | jiachenhui | 完成   |      |      |
 | delete.md                   | jiachenhui | 完成   |      |      |
-| drop-column.md              |            |      |      |      |
+| drop-column.md              | jiachenhui |      |      |      |
 | drop-constraint.md          |            |      |      |      |
 | drop-database.md            |            |      |      |      |
 | drop-index.md               |            |      |      |      |
