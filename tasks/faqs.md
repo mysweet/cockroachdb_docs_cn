@@ -11,7 +11,7 @@
 | cockroachdb-architecture.md     | tiansiyuan  | 完成   |      |      |
 | simplified-deployment.md        | tiansiyuan  | 完成   |      |      |
 | strong-consistency.md           | tiansiyuan  | 完成   |      |      |
-| sql.md                          | DoubleWoodH |      |      |      |
+| sql.md                          | DoubleWoodH | 完成   |      |      |
 | distributed-transactions.md     | tiansiyuan  | 完成   |      |      |
 | automated-scaling-and-repair.md | tiansiyuan  | 完成   |      |      |
 | high-availability.md            | tiansiyuan  | 完成   |      |      |
