@@ -5,7 +5,7 @@
 | 文件名                             | 翻译          | 状态   | 审稿   | 状态   |
 | ------------------------------- | ----------- | ---- | ---- | ---- |
 | frequently-asked-questions.md   | tiansiyuan  | 完成   |      |      |
-| sql-faqs.md                     | DoubleWoodH | 50%  |      |      |
+| sql-faqs.md                     | DoubleWoodH | 完成   |      |      |
 | operational-faqs.md             | tiansiyuan  | 完成   |      |      |
 | cockroachdb-in-comparison.md    | tiansiyuan  | 完成   |      |      |
 | cockroachdb-architecture.md     | tiansiyuan  | 完成   |      |      |
